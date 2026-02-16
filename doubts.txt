@@ -1,0 +1,137 @@
+
+Edit
+Clarifications Doc
+
+    In organiser details it is mentioned to store organiser category. Does this mean the following categories : Clubs, Councils, Fest Teams
+    A: Organizations should be divided into well-defined categories such as Cultural, Technical, Sports, and other relevant domains. This will help in effectively categorizing areas of interest
+
+    In section 9.5 it is mentioned that emails need to be sent out to the participants, do we actually need to send an email to them or just simulate sending an email?
+    A: You are required to send an email to them, as discussed during the tutorial.
+
+    Do we need to allow the participant to cancel their merchandize purchase and add that back to the remaining stock
+    A: We cannot explicitly specify this, as it is intentionally left open-ended and depends on your design choice.
+
+    Does eligibility mean iiit/non-iiit?
+    A:Yes
+
+    Do we need to follow the flow of event creation (given in section 10.4) strictly or can we have an option to publish directly without creating a draft first?
+
+    A:You may modify the flow as needed; however, the Save as Draft option must be included, and the overall flow should remain logical and coherent.
+
+    What is meant by participant type?
+    A: Refer to the assignment Doc
+
+    What does team completion mean analytics in section 10.3?
+    A: Number of teams that have completed their registration (i.e., valid teams participating in the event).
+
+    In section 10.3 it is mentioned that we need to list if the participant was present in an event, how do know if a participant went to an event, should we just simulate and randomly assign present/absent?
+    A: Keep the attendance field if you are doing or attempting Task 13.1 (3rd task), where attendance is tracked using a QR scanner.
+
+    What areas of interests are required to be given to the participant to select from?
+    A: You may provide participants with selectable areas of interest such as Technical, Cultural, Sports, or other relevant categories, based on the chosen design approach.
+
+    In section 9.6 it is mentioned that follow/unfollow clubs option has to be given on the profile page but in section 9.7 it is mentioned that it has to be given on the clubs/organizers listing page, do we have to give the option on both the pages?
+    A:The profile page (Section 9.6) should display the list of clubs that the user is currently following, while the clubs/organizers listing page (Section 9.7) should provide the option to follow or unfollow clubs. It is not mandatory to provide the follow/unfollow action on both pages.
+
+    Can we change the links present in navbar, basically cosmetic changes like remove logout from there and keep on it on dashboard etc.?
+
+    Are we allowed to use mongoose instead of just mongodb? And also nodemon instead of node?
+    A: Yes
+
+    Are we allowed to modify the package.json (which u get after entering 'npm init -y') file "type": "commonjs" to "module"?
+    A: Yes
+
+    Refering to question 8,if we are not doing the 3rd task in section 13.1 then do we not need to put the attendance field?
+    A:Yes
+
+    Do we just directly insert the admin credentials into the database directly or do we have to create a seeding script?
+    A: The implementation approach is left open intentionally. You are expected to choose the most secure option and clearly justify your decision.
+
+    In section 11.2, if the system auto-generates email and password whilst creating the organizer, that means the admin does not have an existing email for the organizer, which means we cant check if that organizer already exists. Should we assume that the names will be unique to check for the same?
+    A: It is left open-ended for your implementation. We suggest using a standard email format for each club (for example, name-iiit@clubs.iiit.ac.in) instead of assuming names are unique. This makes it easy to check if an organizer already exists.
+
+    can we use javascript xml for frontend instead of using standard javascript?
+    A: Yep.
+
+    "Use services like Google reCAPTCHA v2/v3 or hCaptcha" Can we use any other Captchas like turnstile?
+    A Yep
+
+    "IP-based blocking for suspicious activity" Won't this make our website basically unusable when a lot of people from same college start registering together?
+    A :Please ignore this; it was a mistake on our side. A simple CAPTCHA implementation is sufficient. We will update the document accordingly.
+
+    In 11.2 2nd part, we are asked to block accounts such that clubs etc. can't login. Does this mean the next time they try to login since we can't really block accounts while using pure jwt logic?
+    A:Yes.It means that when a club tries to log in next time, the login should be blocked.
+    With JWT, we don’t block existing tokens instantly; instead, the account is marked disabled, and no new JWT is issued, so the club cannot log in again.
+
+    Can we use clubs' official iiit email id for login and contact both as that's what they are used to and it'll be easier to implement cas in future?
+    A: Use the club’s official email credentials if available. CAS login is expected to be used only for participants, not for clubs. If you choose to implement CAS for clubs as well, you may do so, but ensure it does not cause any issues for clubs.
+
+    "Search: Partial & Fuzzy matching on Event/Organizer names" Using $regex in MongoDB to allow Partial matching is fine, right?
+    A: Yep
+
+    In section 7.2 what does "individual purchase only" mean?
+    A: It’s a single-person purchase flow, unlike group events where multiple participants register together.
+
+    Can normal event registerations be paid as well or do only the merchandize events need to have paid registerations?
+    A: Yes normal event can also be a paid event
+
+    Are we allowed to use daisyui, react-toaster or tailwind for the frontend?
+    A: Yes
+
+    In case an organizer is permanently deleted by the admin, how should the system handle events associated with that organizer—should they also be deleted?
+    A: Yes, you need to delete all data associated with it
+
+    Are we allowed to use Prisma with the native MongoDB driver for the backend?
+    A:No
+
+    What do we have to display on Admin dashboard?
+    A: The Admin dashboard should show an overview of clubs/organizers and provide quick access to manage organizers and handle password reset requests
+
+    In 10.3, team completion analytics and team in participant list is expected. But if we are not doing the 11.1 1 feature, can we ignore it?
+
+    After generating login credentials of the organizer in the admin panel, should we expect the admin to manually communicate the credentials somehow, or should we email them to the organizer? at any point, if we should email them, should we just use some random email because we don't have any club emails? And similarly, how do we test Discord webhooks?
+    A: Organizer credentials: Assume the admin will share them manually. No need to implement email sending or use random emails.
+    Discord webhook testing: Create a test Discord server → create a webhook → use its URL to send a test POST request. If the message appears in the channel, it’s working.
+
+    Are we expected to do CAS login for participants? If yes, how?
+    A: : It is not mandatory to implement CAS login. If you would like to integrate it, you can use the IIIT CAS portal at:
+
+    👉 https://login-new.iiit.ac.in/cas/login
+
+    In 10.3, the participant list in the event detail page is supposed to have a filter feature. What does that mean? I mean, what parameters should we filter on?
+    A:You may implement it at your discretion. From our end, we can provide structured input fields such as:
+
+    Attendance Status (Attended / Not Attended)
+
+    Institution Category (IIIT / Non-IIIT)
+
+    What is the expected mechanism for participant password reset? Can we just assume that the participant will reset while logged in (never forgets his password)? or do we have to make a flow using email authentication as well?
+    A: The implementation and design approach may be determined at your discretion. You are encouraged to adopt the solution that you consider most appropriate and effective for the current assignment.
+
+    How are we supposed to track attendance? Do we just assume that if a user registers for an event, he attends it?
+    A: If you are implementing Feature 13.1 third feature using Qr scanner for attendance tracking . Otherwise it is ur choice and implemenation decisions
+
+    While validating IIIT email for IIITH participants, should we allow faculty emails or not?
+    A: Yes
+
+    Is it necessary to have password reset workflow via admin for organisers or will email verification and reset work for clubs?
+    A: This process should be routed exclusively through the Admin.
+
+    Is it okay to store JWT token in cookie instead of bearing it in the header?
+    A: Please select the option that best aligns with the assignment requirements.
+
+    The assignment doc says that the form builder should support various field types, including file upload. How do we support file upload? Can we use unsigned cloudinary uploads?
+    A:For file upload support, files can be uploaded to cloud storage services like Google Drive or Cloudinary. The uploaded file URL can then be stored in the database as part of the form response.
+
+    Can you explain the distinction between organizeres and clubs? They are used together in most places in the assignment. When is a club created or do we assume there are certain pre-existing clubs?
+    A:There is no distinction between organizers and clubs in this assignment. They are intended to mean the same thing. By “organizers,” we are referring to student bodies or clubs. So you can treat both terms interchangeably throughout the assignment.and No assumption regarding the later part
+
+    Should it be ensured that the event status is updated to ongoing automatically depending on the start time of the event, or is it okay to assume that despite giving a start time, the organizer will mark the event as ongoing manually? If we need to ensure automatic updation, how to do that?
+    A:Please ensure that whenever an event is displayed, its status is determined by comparing the current time with the event’s scheduled start and end times. Additionally, provide an option for manual intervention to override or update the status if required.
+
+Last changed by 
+ 
+Nikhilesh Tiruveedula
+0
+401
+Published on HackMD
