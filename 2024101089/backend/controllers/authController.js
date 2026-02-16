@@ -79,4 +79,32 @@ const registerUser = async (req, res) => {
     }
 };
 
-module.exports = { authUser, registerUser };
+// @desc    Update user preferences (interests, following)
+// @route   PUT /api/auth/preferences
+// @access  Private (Participant)
+const updatePreferences = async (req, res) => {
+    try {
+        const { interests, following } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update preferences
+        if (interests) user.interests = interests;
+        if (following) user.following = following;
+
+        await user.save();
+
+        res.json({
+            message: 'Preferences updated successfully',
+            interests: user.interests,
+            following: user.following
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { authUser, registerUser, updatePreferences };

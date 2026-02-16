@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('userInfo', JSON.stringify(data));
             localStorage.setItem('token', data.token); // Store token separately for easier access
             setUser(data);
-            return { success: true };
+            return { success: true, user: data };
         } catch (error) {
             console.error("Login error:", error.response?.data?.message || error.message);
             return {
