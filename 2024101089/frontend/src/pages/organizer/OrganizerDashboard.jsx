@@ -90,7 +90,7 @@ const OrganizerDashboard = () => {
                                 </div>
                                 <div className="p-4 bg-gray-50 border-t flex justify-end">
                                     <button className="text-indigo-600 text-sm hover:underline mr-3">Waitlist</button>
-                                    <button className="text-indigo-600 text-sm hover:underline">Edit</button>
+                                    <Link to={`/organizer/events/edit/${event._id}`} className="text-indigo-600 text-sm hover:underline">Edit</Link>
                                     {/* Link to detail page later */}
                                 </div>
                             </div>

@@ -87,4 +87,49 @@ const checkRegistration = async (req, res) => {
     }
 }
 
-module.exports = { registerEvent, getMyRegistrations, checkRegistration };
+// @desc    Get all registrations for an event (for organizers)
+// @route   GET /api/registrations/event/:eventId
+// @access  Private (Organizer)
+const getEventRegistrations = async (req, res) => {
+    try {
+        const registrations = await Registration.find({ event: req.params.eventId })
+            .populate('user', 'firstName lastName email contactNumber')
+            .sort({ createdAt: -1 });
+        res.json(registrations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update registration status (approve/reject from waitlist)
+// @route   PUT /api/registrations/:id/status
+// @access  Private (Organizer)
+const updateRegistrationStatus = async (req, res) => {
+    try {
+        const { status } = req.body; // 'Confirmed', 'Rejected'
+        const registration = await Registration.findById(req.params.id);
+
+        if (!registration) {
+            return res.status(404).json({ message: 'Registration not found' });
+        }
+
+        registration.status = status;
+
+        // Generate ticket if confirming
+        if (status === 'Confirmed' && !registration.ticketId) {
+            registration.ticketId = generateTicketId();
+
+            // Update event count
+            const event = await Event.findById(registration.event);
+            event.currentRegistrations = event.currentRegistrations + 1;
+            await event.save();
+        }
+
+        await registration.save();
+        res.json(registration);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus };

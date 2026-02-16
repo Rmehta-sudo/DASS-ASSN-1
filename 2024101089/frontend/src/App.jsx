@@ -12,6 +12,7 @@ import MyRegistrations from './pages/MyRegistrations';
 import ResetRequest from './pages/organizer/ResetRequest';
 import AttendanceScanner from './pages/organizer/AttendanceScanner';
 import Onboarding from './pages/Onboarding';
+import EventEdit from './pages/organizer/EventEdit';
 import Navbar from './components/Navbar';
 
 // A simple PrivateRoute component to protect dashboard

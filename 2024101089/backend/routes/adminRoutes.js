@@ -4,8 +4,8 @@ const { getClubs, deleteClub, addClub, requestPasswordReset, getResetRequests, p
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/clubs')
-    .get(protect, admin, getClubs)
-    .post(protect, admin, addClub);
+    .get(protect, getClubs)  // Changed: allow any authenticated user to view clubs
+    .post(protect, admin, addClub);  // Keep admin-only for creating
 
 router.route('/clubs/:id')
     .delete(protect, admin, deleteClub);

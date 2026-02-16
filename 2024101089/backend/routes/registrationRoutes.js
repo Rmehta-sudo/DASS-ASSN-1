@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerEvent, getMyRegistrations, checkRegistration } = require('../controllers/registrationController');
+const { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus } = require('../controllers/registrationController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -11,5 +11,11 @@ router.route('/my')
 
 router.route('/check/:eventId')
     .get(protect, checkRegistration);
+
+router.route('/event/:eventId')
+    .get(protect, getEventRegistrations);
+
+router.route('/:id/status')
+    .put(protect, updateRegistrationStatus);
 
 module.exports = router;
