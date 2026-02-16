@@ -59,6 +59,11 @@ function App() {
                                 <EventCreate />
                             </PrivateRoute>
                         } />
+                        <Route path="/organizer/events/edit/:id" element={
+                            <PrivateRoute>
+                                <EventEdit />
+                            </PrivateRoute>
+                        } />
                         <Route path="/organizer/scanner" element={
                             <PrivateRoute>
                                 <AttendanceScanner />
