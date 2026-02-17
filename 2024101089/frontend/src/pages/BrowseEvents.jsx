@@ -115,7 +115,9 @@ const BrowseEvents = () => {
                         <div key={event._id} className="glass rounded-2xl overflow-hidden card-hover flex flex-col h-full border border-gray-100">
                             {/* Placeholder Gradient Header instead of image for now */}
                             <div className={`h-32 bg-gradient-to-r ${getGradient(event.type)} flex items-center justify-center`}>
-                                <span className="text-white font-bold text-2xl drop-shadow-md">{event.name.charAt(0)}</span>
+                                <span className="text-white font-bold text-2xl drop-shadow-md px-4 text-center">
+                                    {event.organizer?.name || 'Club'}
+                                </span>
                             </div>
 
                             <div className="p-6 flex-1 flex flex-col">
@@ -134,8 +136,8 @@ const BrowseEvents = () => {
 
                                 <div className="mt-auto pt-4 border-t border-gray-100">
                                     <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
-                                        <span>📅 {new Date(event.startDate).toLocaleDateString()}</span>
-                                        <span>💰 {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}</span>
+                                        <span>Date: {new Date(event.startDate).toLocaleDateString()}</span>
+                                        <span>Fee: {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}</span>
                                     </div>
 
                                     <Link

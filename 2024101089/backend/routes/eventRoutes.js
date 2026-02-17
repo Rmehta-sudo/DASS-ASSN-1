@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent
+    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents
 } = require('../controllers/eventController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -11,6 +11,9 @@ router.route('/')
 
 router.route('/my')
     .get(protect, getMyEvents);
+
+router.route('/recommended')
+    .get(protect, getRecommendedEvents);
 
 router.route('/:id')
     .get(getEventById)

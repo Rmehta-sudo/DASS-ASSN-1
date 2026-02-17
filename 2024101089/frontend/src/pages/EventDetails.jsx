@@ -121,13 +121,13 @@ const EventDetails = () => {
 
                     <div className="mt-6 flex flex-wrap gap-6 text-gray-600 font-medium">
                         <div className="flex items-center gap-2">
-                            <span>📅</span> {new Date(event.startDate).toLocaleString()}
+                            <span className="font-bold">Date:</span> {new Date(event.startDate).toLocaleString()}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span>📍</span> {event.location || 'Campus'}
+                            <span className="font-bold">Location:</span> {event.location || 'Campus'}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span>💰</span> {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}
+                            <span className="font-bold">Fee:</span> {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}
                         </div>
                     </div>
                 </div>
@@ -178,7 +178,7 @@ const EventDetails = () => {
                         </div>
                     ) : (
                         <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-                            <div className="text-5xl mb-4">🎉</div>
+                            <div className="text-5xl mb-4 text-green-600">✓</div>
                             <h2 className="text-2xl font-bold text-green-800 mb-2">You are confirmed!</h2>
                             <p className="text-green-700 mb-4">Ticket ID: <span className="font-mono font-bold bg-white px-2 py-1 rounded border border-green-200">{registration.ticketId || 'Generating...'}</span></p>
 

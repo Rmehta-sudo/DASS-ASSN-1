@@ -170,24 +170,24 @@ const OrganizerDashboard = () => {
                                                             {reg.user?.firstName} {reg.user?.lastName}
                                                         </h4>
                                                         <span className={`px-2 py-1 text-xs rounded-full ${reg.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                                                                reg.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                    reg.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                            reg.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                reg.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                             }`}>
                                                             {reg.status}
                                                         </span>
                                                     </div>
                                                     <p className="text-sm text-gray-600 mt-1">
-                                                        📧 {reg.user?.email} | 📞 {reg.user?.contactNumber}
+                                                        Email: {reg.user?.email} | Phone: {reg.user?.contactNumber}
                                                     </p>
                                                     {reg.ticketId && (
                                                         <p className="text-sm text-indigo-600 mt-1 font-mono">
-                                                            🎫 {reg.ticketId}
+                                                            Ticket: {reg.ticketId}
                                                         </p>
                                                     )}
                                                     {reg.teamName && (
                                                         <p className="text-sm text-gray-600 mt-1">
-                                                            👥 Team: {reg.teamName}
+                                                            Team: {reg.teamName}
                                                         </p>
                                                     )}
                                                     <p className="text-xs text-gray-400 mt-1">

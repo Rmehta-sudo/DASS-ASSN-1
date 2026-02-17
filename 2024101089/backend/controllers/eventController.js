@@ -1,5 +1,6 @@
 const Event = require('../models/Event');
 const Organizer = require('../models/Organizer');
+const Registration = require('../models/Registration');
 
 // @desc    Create a new event
 // @route   POST /api/events
@@ -100,6 +101,14 @@ const updateEvent = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to edit this event' });
         }
 
+        // Check if formFields are being updated
+        if (req.body.formFields) {
+            const registrationCount = await Registration.countDocuments({ event: event._id });
+            if (registrationCount > 0) {
+                return res.status(400).json({ message: 'Cannot modify form fields after registrations have started' });
+            }
+        }
+
         // Logic check: Can't edit core details if published? (Student logic: allow it but warn?)
         // Applying updates
         Object.assign(event, req.body);
@@ -135,4 +144,45 @@ const deleteEvent = async (req, res) => {
     }
 }
 
-module.exports = { createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent };
+// @desc    Get recommended events based on user interests
+// @route   GET /api/events/recommended
+// @access  Private (Participant)
+const getRecommendedEvents = async (req, res) => {
+    try {
+        const user = req.user;
+
+        // Build query based on interests and following
+        let query = { status: 'Published' };
+
+        if (user.interests.length > 0 || user.following.length > 0) {
+            const tagQueries = user.interests.map(interest => ({
+                tags: { $regex: interest, $options: 'i' }
+            }));
+
+            query.$or = [
+                { organizer: { $in: user.following } },
+                ...tagQueries
+            ];
+        }
+
+        const recommended = await Event.find(query)
+            .sort({ startDate: 1 })
+            .limit(10)
+            .populate('organizer', 'name category');
+
+        res.json(recommended);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    createEvent,
+    getEvents,
+    getMyEvents,
+    getEventById,
+    updateEvent,
+    deleteEvent,
+    getRecommendedEvents
+};

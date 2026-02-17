@@ -13,6 +13,7 @@ import ResetRequest from './pages/organizer/ResetRequest';
 import AttendanceScanner from './pages/organizer/AttendanceScanner';
 import Onboarding from './pages/Onboarding';
 import EventEdit from './pages/organizer/EventEdit';
+import Profile from './pages/Profile';
 import Navbar from './components/Navbar';
 
 // A simple PrivateRoute component to protect dashboard
@@ -34,6 +35,11 @@ function App() {
                         <Route path="/onboarding" element={
                             <PrivateRoute>
                                 <Onboarding />
+                            </PrivateRoute>
+                        } />
+                        <Route path="/profile" element={
+                            <PrivateRoute>
+                                <Profile />
                             </PrivateRoute>
                         } />
                         <Route path="/" element={<Navigate to="/dashboard" />} />
