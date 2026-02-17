@@ -11,6 +11,7 @@ cd backend
 npm install
 # Create .env file if not exists (see .env.example)
 # Ensure MONGO_URI is set
+# Add ADMIN_PASSWORD and DEFAULT_CLUB_PASSWORD to .env
 node server.js
 ```
 *Server runs on `http://localhost:5000`*
@@ -103,3 +104,31 @@ Follow this flow to test all features in the browser.
 - **Socket Connection Failed**: Ensure backend is running. Check browser console for `socket.io` errors.
 - **MongoDB Error**: Ensure `mongod` is running locally.
 - **Login Failed**: Check `admin` seeds or created user credentials.
+
+---
+
+## 🚀 Deployment Guide (Render & Vercel)
+
+### 1. Backend (Render)
+When deploying the backend to Render, you **MUST** add the environment variables in the Render Dashboard.
+
+1.  Go to your **Render Dashboard** -> Select your **Backend Service**.
+2.  Click on **Environment**.
+3.  Add the following Environment Variables (Key-Value pairs):
+    - `MONGO_URI`: (Your MongoDB Atlas Connection String)
+    - `JWT_SECRET`: (A strong secret key, e.g., `supersecretkey123`)
+    - `ADMIN_PASSWORD`: (Set a strong password for the Admin account)
+    - `DEFAULT_CLUB_PASSWORD`: (Set a default password for new clubs)
+    - `PORT`: `5000` (Optional, Render usually handles this)
+
+### 2. Frontend (Vercel)
+The Frontend **DOES NOT** require the admin/club passwords. It only needs to know where the backend is.
+
+1.  Go to your **Vercel Dashboard** -> Select your **Frontend Project**.
+2.  Click on **Settings** -> **Environment Variables**.
+3.  Add the following:
+    - `VITE_API_URL`: (Your Render Backend URL, e.g., `https://your-backend.onrender.com/api`)
+    
+> [!IMPORTANT]
+> **NEVER** commit your `.env` file to GitHub. It is included in `.gitignore` to prevent this.
+

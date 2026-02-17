@@ -19,7 +19,7 @@ const seedData = async () => {
             firstName: 'Admin',
             lastName: 'User',
             email: 'admin@felicity.iiit.ac.in',
-            password: 'adminpassword',
+            password: process.env.ADMIN_PASSWORD,
             role: 'admin',
             contactNumber: '0000000000',
             participantType: 'IIIT'
@@ -43,7 +43,7 @@ const seedData = async () => {
 
         // 3. Create Club Users & Organizers
         for (const club of clubs) {
-            const password = 'password123'; // Default password for all clubs
+            const password = process.env.DEFAULT_CLUB_PASSWORD; // Default password for all clubs
 
             const user = await User.create({
                 firstName: club.name,

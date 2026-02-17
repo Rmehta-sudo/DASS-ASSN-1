@@ -72,7 +72,7 @@ const AdminDashboard = () => {
             const config = {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             };
-            await axios.delete(`http://localhost:5000/api/admin/clubs/${id}`, config);
+            await axios.delete(`${API_URL}/admin/clubs/${id}`, config);
             fetchClubs(); // Refresh list
         } catch (error) {
             alert(error.response.data.message);
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
             const config = {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             };
-            await axios.post('http://localhost:5000/api/admin/clubs', newClub, config);
+            await axios.post(`${API_URL}/admin/clubs`, newClub, config);
             setMessage('Club added successfully! Password: password123'); // Student hack: showing default password
             setNewClub({ name: '', category: 'Cultural', email: '', description: '' });
             fetchClubs();

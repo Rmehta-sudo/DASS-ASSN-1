@@ -49,7 +49,7 @@ const addClub = async (req, res) => {
         }
 
         // Auto-generate password (simple for student project, maybe use random string in real life)
-        const password = 'password123';
+        const password = process.env.DEFAULT_CLUB_PASSWORD;
 
         const user = await User.create({
             firstName: name,
