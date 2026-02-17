@@ -26,6 +26,24 @@ const MyRegistrations = () => {
         }
     };
 
+    const handleUploadClick = async (regId) => {
+        const url = prompt("Enter Payment Proof URL (e.g., Google Drive link):");
+        if (url) {
+            try {
+                const token = localStorage.getItem('token');
+                await axios.put(`${API_URL}/registrations/${regId}/payment`, {
+                    paymentProof: url
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                alert("Proof uploaded successfully!");
+                fetchRegistrations();
+            } catch (error) {
+                alert("Error uploading proof: " + (error.response?.data?.message || error.message));
+            }
+        }
+    };
+
     if (loading) return <div className="p-10 text-center">Loading...</div>;
 
     return (
@@ -60,6 +78,16 @@ const MyRegistrations = () => {
                                                 reg.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                             {reg.status}
                                         </span>
+                                        {reg.status === 'Pending' && (
+                                            <div className="mt-2">
+                                                <button
+                                                    onClick={() => handleUploadClick(reg._id)}
+                                                    className="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                                                >
+                                                    Upload Payment Proof
+                                                </button>
+                                            </div>
+                                        )}
                                         {reg.ticketId && (
                                             <div className="mt-2">
                                                 <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded block mb-1">

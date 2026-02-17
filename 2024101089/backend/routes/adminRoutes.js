@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { getClubs, deleteClub, addClub, requestPasswordReset, getResetRequests, processResetRequest } = require('../controllers/adminController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const {
+    getClubs, deleteClub, addClub,
+    requestPasswordReset, getResetRequests, processResetRequest,
+    getClubById, updateClubProfile
+} = require('../controllers/adminController');
+const { protect, admin, authorize } = require('../middleware/authMiddleware');
+
+router.route('/clubs/profile')
+    .put(protect, authorize('organizer'), updateClubProfile);
 
 router.route('/clubs')
     .get(protect, getClubs)  // Changed: allow any authenticated user to view clubs
-    .post(protect, admin, addClub);  // Keep admin-only for creating
+    .post(protect, authorize('admin'), addClub);  // Keep admin-only for creating
 
 router.route('/clubs/:id')
+    .get(protect, getClubById)
     .delete(protect, admin, deleteClub);
 
 // Password Reset Routes

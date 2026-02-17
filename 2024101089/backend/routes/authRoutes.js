@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { authUser, registerUser, updatePreferences, updateUserProfile, getUserProfile, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { loginLimiter } = require('../middleware/rateLimiter');
 
-router.post('/login', authUser);
+router.post('/login', loginLimiter, authUser);
 router.post('/register', registerUser);
 router.put('/preferences', protect, updatePreferences);
 router.get('/profile', protect, getUserProfile);

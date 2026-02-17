@@ -24,6 +24,7 @@ const Navbar = () => {
             {/* Links */}
             <div className="hidden md:flex items-center gap-6 font-medium">
                 <Link to="/events" className="hover:text-indigo-600 transition-colors">Browse Events</Link>
+                <Link to="/clubs" className="hover:text-indigo-600 transition-colors">Clubs</Link>
                 <Link to="/my-registrations" className="hover:text-indigo-600 transition-colors">My Tickets</Link>
 
                 {user.role === 'admin' && (

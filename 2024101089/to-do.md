@@ -174,6 +174,3 @@
 - [ ] **Anonymous feedback system** - **Fully Implemented**
   - *Backend:* `backend/controllers/feedbackController.js`
   - *Frontend:* `frontend/src/components/FeedbackForm.jsx`
-- [ ] **Add-to-calendar integration system** - **Not Done**
-- [ ] **Bot protection system** - **Not Done**
-  - Checked `Login.jsx`, no CAPTCHA found.

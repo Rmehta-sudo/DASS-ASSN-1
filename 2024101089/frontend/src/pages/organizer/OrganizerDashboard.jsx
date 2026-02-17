@@ -193,6 +193,13 @@ const OrganizerDashboard = () => {
                                                     <p className="text-xs text-gray-400 mt-1">
                                                         Registered: {new Date(reg.createdAt).toLocaleDateString()}
                                                     </p>
+                                                    {reg.paymentProof && (
+                                                        <div className="mt-2">
+                                                            <a href={reg.paymentProof} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm font-medium hover:text-blue-800">
+                                                                📄 View Payment Proof
+                                                            </a>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {reg.status === 'Pending' && (

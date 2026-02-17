@@ -67,8 +67,9 @@
   - *Backend:* `backend/models/Event.js` (Line 76)
 - [x] **Event lifecycle management system** - **Fully Implemented**
   - *Backend:* `backend/models/Event.js` (Status enum)
-- [ ] **Eligibility enforcement system** - **Partially Implemented**
-  - *Backend:* Field exists (`Event.js` Line 34), but `registrationController.js` logic for enforcement is minimal.
+- [x] **Eligibility enforcement system** - **Fully Implemented**
+  - *Backend:* `registrationController.js` checks Participant Type against Event Eligibility.
+  - *Test:* `tests/eligibility_test.js` passed.
 - [x] **Registration deadline enforcement system** - **Fully Implemented**
   - Check typically in `registrationController.js` (Implicit/To be verified).
 - [x] **Registration limit and stock validation system** - **Fully Implemented**
@@ -98,9 +99,9 @@
 - [x] **My Events dashboard system** - **Fully Implemented**
   - *Backend:* `backend/controllers/registrationController.js` (`getMyRegistrations`)
   - *Frontend:* `frontend/src/pages/MyRegistrations.jsx`
-- [ ] **Browse Events system** - **Partially Implemented**
-  - *Backend:* `getEvents` is basic. Search/Filtering logic is mentioned in comments ("Can add filters here later" - `eventController.js` Line 45).
-  - *Frontend:* `frontend/src/pages/BrowseEvents.jsx` exists.
+- [x] **Browse Events system** - **Fully Implemented**
+  - *Backend:* `getEvents` supports filtering by organizer, type, and search text.
+  - *Test:* `tests/filtering_test.js` passed.
 - [x] **Event details page system** - **Fully Implemented**
   - *Frontend:* `frontend/src/pages/EventDetails.jsx`
 - [x] **Normal event registration workflow** - **Fully Implemented**
@@ -111,8 +112,10 @@
   - *Backend:* `backend/controllers/registrationController.js` (`generateTicketId`)
 - [x] **Clubs/Organizers listing system** - **Fully Implemented**
   - *Backend:* `backend/controllers/adminController.js` (`getClubs`) - *Note: might need public endpoint.*
-- [ ] **Organizer detail page (participant view)** - **not Done**
-  - Endpoint `getClubs` is Admin only. `getEventById` populates organizer, but separate page logic needs check.
+- [x] **Organizer detail page (participant view)** - **Fully Implemented**
+  - *Backend:* `getClubById` endpoint added to `adminController.js` (accessible to participants).
+  - *Frontend:* `src/pages/Clubs.jsx` (List) and `src/pages/ClubDetails.jsx` (Detail) created.
+  - *Test:* `tests/club_details_test.js` passed.
 
 ---
 
@@ -123,15 +126,18 @@
 - [x] **Organizer dashboard system** - **Fully Implemented**
   - *Backend:* `backend/controllers/eventController.js` (`getMyEvents`)
   - *Frontend:* `frontend/src/pages/organizer/OrganizerDashboard.jsx`
-- [ ] **Organizer event detail management system** - **Partially Implemented**
-  - *Backend:* `getEventIds` exists. Analytics logic minimal.
+- [x] **Organizer event detail management system** - **Fully Implemented**
+  - *Backend:* `getEventAnalytics` added to `eventController.js`.
+  - *Test:* `tests/analytics_test.js` passed.
 - [x] **Event creation & editing workflow system** - **Fully Implemented**
   - *Backend:* `backend/controllers/eventController.js` (`createEvent`, `updateEvent`)
   - *Frontend:* `frontend/src/pages/organizer/EventCreate.jsx`
-- [ ] **Organizer profile management system** - **Partially Implemented**
-  - *Backend:* `Organizer` model exists. Update endpoint not explicitly seen in `adminController` or `authController` (needs `updateOrganizerProfile`).
-- [ ] **Discord webhook integration system** - **Not Done**
-  - No `webhook` logic seen in `eventController.js`.
+- [x] **Organizer profile management system** - **Fully Implemented**
+  - *Backend:* `updateClubProfile` endpoint added to `adminController.js`.
+  - *Test:* `tests/org_profile_test.js` passed.
+- [x] **Discord webhook integration system** - **Fully Implemented**
+  - *Backend:* `backend/controllers/eventController.js`, `backend/utils/discordWebhook.js`
+  - *Test:* `tests/discord_test.js` passed.
 
 ---
 
@@ -159,8 +165,9 @@
 - [x] **Hackathon team registration system** - **Fully Implemented**
   - *Backend:* `backend/models/Team.js`, `backend/controllers/teamController.js`
   - *Frontend:* `frontend/src/components/EventTeam.jsx`
-- [ ] **Merchandise payment approval workflow** - **Partially Implemented**
-  - *Backend:* `Registration.js` has `paymentProof`. Controller has 'Pending' status logic. **Missing:** Upload endpoint & Approval UI.
+- [x] **Merchandise payment approval workflow** - **Fully Implemented**
+  - *Backend:* `uploadPaymentProof` and `updateRegistrationStatus` endpoints working.
+  - *Test:* `tests/merch_workflow_test.js` passed.
 - [x] **QR scanner & attendance tracking system** - **Fully Implemented**
   - *Backend:* `backend/controllers/attendanceController.js`
   - *Frontend:* `frontend/src/pages/organizer/AttendanceScanner.jsx`
@@ -176,9 +183,9 @@
   - *Backend:* `chatController.js` supports team messages.
 
 ### 🅲 Tier C
-- [ ] **Anonymous feedback system** - **Fully Implemented**
+- [x] **Anonymous feedback system** - **Fully Implemented**
   - *Backend:* `backend/controllers/feedbackController.js`
   - *Frontend:* `frontend/src/components/FeedbackForm.jsx`
-- [ ] **Add-to-calendar integration system** - **Not Done**
-- [ ] **Bot protection system** - **Not Done**
-  - Checked `Login.jsx`, no CAPTCHA found.
+  - *Test:* `tests/feedback_test.js` passed.
+- [x] **Add-to-calendar integration system** - **Not Required** (Skipped per user request)
+- [x] **Bot protection system** - **Not Required** (Skipped per user request)

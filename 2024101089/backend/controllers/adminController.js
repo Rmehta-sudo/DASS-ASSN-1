@@ -163,11 +163,51 @@ const processResetRequest = async (req, res) => {
     }
 };
 
+// @desc    Get single club/organizer by ID
+// @route   GET /api/admin/clubs/:id
+// @access  Private (Authenticated users)
+const getClubById = async (req, res) => {
+    try {
+        const club = await Organizer.findById(req.params.id).populate('user', 'name email');
+        if (club) {
+            res.json(club);
+        } else {
+            res.status(404).json({ message: 'Club not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update Club/Organizer Profile (for the organizer themselves)
+// @route   PUT /api/admin/clubs/profile
+// @access  Private (Organizer)
+const updateClubProfile = async (req, res) => {
+    try {
+        const organizer = await Organizer.findOne({ user: req.user._id });
+        if (!organizer) {
+            return res.status(404).json({ message: 'Organizer profile not found' });
+        }
+
+        organizer.name = req.body.name || organizer.name;
+        organizer.description = req.body.description || organizer.description;
+        organizer.contactEmail = req.body.contactEmail || organizer.contactEmail;
+        organizer.category = req.body.category || organizer.category;
+
+        const updatedOrganizer = await organizer.save();
+        res.json(updatedOrganizer);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getClubs,
     deleteClub,
     addClub,
     requestPasswordReset,
     getResetRequests,
-    processResetRequest
+    processResetRequest,
+    getClubById,
+    updateClubProfile
 };

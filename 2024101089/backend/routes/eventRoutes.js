@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const {
-    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents
+    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents, getEventAnalytics
 } = require('../controllers/eventController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
     .get(getEvents)
@@ -17,7 +17,10 @@ router.route('/recommended')
 
 router.route('/:id')
     .get(getEventById)
-    .put(protect, updateEvent)
-    .delete(protect, deleteEvent);
+    .put(protect, authorize('organizer'), updateEvent)
+    .delete(protect, authorize('organizer'), deleteEvent);
+
+router.route('/:id/analytics')
+    .get(protect, authorize('organizer'), getEventAnalytics);
 
 module.exports = router;

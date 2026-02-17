@@ -25,6 +25,14 @@ All test scripts are located in:
 | **Password Reset (Participant)** | `tests/forgot_password_test.js` | ✅ PASS | Verifies forgot password flow using mock email and token. |
 | **Recommendations** | `tests/recommendation_test.js` | ✅ PASS | Verifies event recommendations based on interests and following. |
 | **Form Locking** | `tests/form_lock_test.js` | ✅ PASS | Verifies form fields cannot be modified after registrations start. |
+| **Club Details** | `tests/club_details_test.js` | ✅ PASS | Verifies public access to organizer details and event filtering. |
+| **Payment Approval** | `tests/merch_workflow_test.js` | ✅ PASS | Verifies merchandise payment proof upload and organizer approval. |
+| **Eligibility** | `tests/eligibility_test.js` | ✅ PASS | Verifies event eligibility enforcement (e.g., IIIT Only). |
+| **Event Filtering** | `tests/filtering_test.js` | ✅ PASS | Verifies searching and filtering events by type/organizer. |
+| **Event Analytics** | `tests/analytics_test.js` | ✅ PASS | Verifies organizer analytics (registrations/revenue) retrieval. |
+| **Club Profile** | `tests/org_profile_test.js` | ✅ PASS | Verifies organizers can update their own club profile. |
+| **Discord Integration** | `tests/discord_test.js` | ✅ PASS | Verifies webhook trigger on event publication. |
+| **Feedback System** | `tests/feedback_test.js` | ✅ PASS | Verifies anonymous feedback submission and retrieval for past events. |
 
 ## Execution Instructions
 To run these tests locally:

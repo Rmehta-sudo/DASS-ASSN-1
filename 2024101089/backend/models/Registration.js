@@ -44,7 +44,8 @@ const registrationSchema = mongoose.Schema({
     // Ticket ID
     ticketId: {
         type: String,
-        unique: true
+        unique: true,
+        sparse: true // Allow multiple nulls
     },
     attended: {
         type: Boolean,

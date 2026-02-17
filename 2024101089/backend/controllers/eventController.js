@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const Organizer = require('../models/Organizer');
 const Registration = require('../models/Registration');
+const sendDiscordNotification = require('../utils/discordWebhook');
 
 // @desc    Create a new event
 // @route   POST /api/events
@@ -10,7 +11,8 @@ const createEvent = async (req, res) => {
         const {
             name, description, type, eligibility,
             registrationFee, registrationLimit, startDate, endDate, deadline,
-            location, tags, formFields, merchandise, teamSizeMin, teamSizeMax
+            location, tags, formFields, merchandise, teamSizeMin, teamSizeMax,
+            status
         } = req.body;
 
         // Ensure user is an organizer
@@ -24,13 +26,19 @@ const createEvent = async (req, res) => {
             return res.status(404).json({ message: 'Organizer profile not found' });
         }
 
+        const eventStatus = status || 'Draft';
+
         const event = await Event.create({
             organizer: organizer._id,
             name, description, type, eligibility,
             registrationFee, registrationLimit, startDate, endDate, deadline,
             location, tags, formFields, merchandise, teamSizeMin, teamSizeMax,
-            status: 'Draft' // Default status
+            status: eventStatus
         });
+
+        if (eventStatus === 'Published') {
+            sendDiscordNotification(`📢 New Event Published: **${name}** by ${organizer.name}! Check it out now.`);
+        }
 
         res.status(201).json(event);
     } catch (error) {
@@ -43,9 +51,30 @@ const createEvent = async (req, res) => {
 // @access  Public
 const getEvents = async (req, res) => {
     try {
-        // Can add filters here later
-        const events = await Event.find({ status: { $ne: 'Draft' } })
-            .populate('organizer', 'name category');
+        let query = { status: { $ne: 'Draft' } };
+
+        // Filter by Organizer
+        if (req.query.organizer) {
+            query.organizer = req.query.organizer;
+        }
+
+        // Search by Name or Description
+        if (req.query.search) {
+            query.$or = [
+                { name: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+
+        // Filter by Type
+        if (req.query.type) {
+            query.type = req.query.type; // 'Normal' or 'Merchandise'
+        }
+
+        const events = await Event.find(query)
+            .populate('organizer', 'name category')
+            .sort({ startDate: 1 });
+
         res.json(events);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -177,6 +206,55 @@ const getRecommendedEvents = async (req, res) => {
     }
 };
 
+// @desc    Get event analytics (Organizer)
+// @route   GET /api/events/:id/analytics
+// @access  Private (Organizer)
+const getEventAnalytics = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Check ownership
+        const organizer = await Organizer.findOne({ user: req.user._id });
+        if (!organizer) {
+            return res.status(403).json({ message: 'Not authorized as an organizer' });
+        }
+
+        if (event.organizer.toString() !== organizer._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to view analytics for this event' });
+        }
+
+        const registrations = await Registration.find({ event: req.params.id });
+
+        const totalRegistrations = registrations.length;
+        const confirmedRegistrations = registrations.filter(r => r.status === 'Confirmed').length;
+        const pendingRegistrations = registrations.filter(r => r.status === 'Pending').length;
+        const totalRevenue = confirmedRegistrations * event.registrationFee;
+
+        // Daily registrations (last 7 days)
+        const dailyStats = {};
+        registrations.forEach(reg => {
+            const date = reg.createdAt.toISOString().split('T')[0];
+            dailyStats[date] = (dailyStats[date] || 0) + 1;
+        });
+
+        res.json({
+            eventName: event.name,
+            totalRegistrations,
+            confirmedRegistrations,
+            pendingRegistrations,
+            totalRevenue,
+            dailyStats
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createEvent,
     getEvents,
@@ -184,5 +262,6 @@ module.exports = {
     getEventById,
     updateEvent,
     deleteEvent,
-    getRecommendedEvents
+    getRecommendedEvents,
+    getEventAnalytics
 };

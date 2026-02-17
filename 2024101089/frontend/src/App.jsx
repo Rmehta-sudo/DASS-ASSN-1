@@ -14,6 +14,8 @@ import AttendanceScanner from './pages/organizer/AttendanceScanner';
 import Onboarding from './pages/Onboarding';
 import EventEdit from './pages/organizer/EventEdit';
 import Profile from './pages/Profile';
+import Clubs from './pages/Clubs';
+import ClubDetails from './pages/ClubDetails';
 import Navbar from './components/Navbar';
 
 // A simple PrivateRoute component to protect dashboard
@@ -40,6 +42,16 @@ function App() {
                         <Route path="/profile" element={
                             <PrivateRoute>
                                 <Profile />
+                            </PrivateRoute>
+                        } />
+                        <Route path="/clubs" element={
+                            <PrivateRoute>
+                                <Clubs />
+                            </PrivateRoute>
+                        } />
+                        <Route path="/clubs/:id" element={
+                            <PrivateRoute>
+                                <ClubDetails />
                             </PrivateRoute>
                         } />
                         <Route path="/" element={<Navigate to="/dashboard" />} />

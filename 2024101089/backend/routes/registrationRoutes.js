@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus } = require('../controllers/registrationController');
+const { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus, uploadPaymentProof, downloadIcs } = require('../controllers/registrationController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -17,5 +17,11 @@ router.route('/event/:eventId')
 
 router.route('/:id/status')
     .put(protect, updateRegistrationStatus);
+
+router.route('/:id/payment')
+    .put(protect, uploadPaymentProof);
+
+router.route('/:id/ics')
+    .get(protect, downloadIcs);
 
 module.exports = router;

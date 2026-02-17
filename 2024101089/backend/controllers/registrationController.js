@@ -26,8 +26,13 @@ const registerEvent = async (req, res) => {
         }
 
         // Check seats
-        if (event.currentRegistrations >= event.registrationLimit) {
+        if (event.currentRegistrations >= event.registrationLimit && event.registrationLimit > 0) {
             return res.status(400).json({ message: 'Event is full' });
+        }
+
+        // Check Eligibility
+        if (event.eligibility === 'IIIT Only' && req.user.participantType !== 'IIIT') {
+            return res.status(403).json({ message: 'This event is restricted to IIIT students only' });
         }
 
         // Determine status
@@ -36,14 +41,19 @@ const registerEvent = async (req, res) => {
             status = 'Pending'; // Waiting for payment proof (Tier A implementation later)
         }
 
-        const registration = await Registration.create({
+        const regData = {
             user: req.user._id,
             event: eventId,
             status,
             responses,
-            teamName,
-            ticketId: status === 'Confirmed' ? generateTicketId() : null
-        });
+            teamName
+        };
+
+        if (status === 'Confirmed') {
+            regData.ticketId = generateTicketId();
+        }
+
+        const registration = await Registration.create(regData);
 
         // Update event count
         if (status === 'Confirmed') {
@@ -132,4 +142,74 @@ const updateRegistrationStatus = async (req, res) => {
     }
 };
 
-module.exports = { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus };
+// @desc    Upload payment proof
+// @route   PUT /api/registrations/:id/payment
+// @access  Private
+const uploadPaymentProof = async (req, res) => {
+    try {
+        const { paymentProof } = req.body;
+        const registration = await Registration.findById(req.params.id);
+
+        if (!registration) {
+            return res.status(404).json({ message: 'Registration not found' });
+        }
+
+        // Check ownership
+        if (registration.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        registration.paymentProof = paymentProof;
+        await registration.save();
+
+        res.json(registration);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Download ICS file for a registration
+// @route   GET /api/registrations/:id/ics
+// @access  Private
+const downloadIcs = async (req, res) => {
+    try {
+        const registration = await Registration.findById(req.params.id).populate('event');
+        if (!registration) {
+            return res.status(404).json({ message: 'Registration not found' });
+        }
+
+        // Ownership check
+        if (registration.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        const event = registration.event;
+        const formatTime = (date) => date.toISOString().replace(/-|:|\.\d+/g, '');
+
+        const startDate = formatTime(new Date(event.startDate));
+        const endDate = event.endDate ? formatTime(new Date(event.endDate)) : startDate;
+
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Felicity Fest//EN
+BEGIN:VEVENT
+UID:${registration._id}@felicity.iiit.ac.in
+DTSTAMP:${formatTime(new Date())}
+DTSTART:${startDate}
+DTEND:${endDate}
+SUMMARY:${event.name}
+DESCRIPTION:${event.description}
+LOCATION:${event.location || 'TBA'}
+END:VEVENT
+END:VCALENDAR`;
+
+        res.set('Content-Type', 'text/calendar');
+        res.set('Content-Disposition', `attachment; filename="${event.name.replace(/[^a-z0-9]/yi, '_')}.ics"`);
+        res.send(icsContent);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { registerEvent, getMyRegistrations, checkRegistration, getEventRegistrations, updateRegistrationStatus, uploadPaymentProof, downloadIcs };
