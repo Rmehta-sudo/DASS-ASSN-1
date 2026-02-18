@@ -193,7 +193,37 @@ const updateEvent = async (req, res) => {
         if (req.body.formFields) {
             const registrationCount = await Registration.countDocuments({ event: event._id });
             if (registrationCount > 0) {
-                return res.status(400).json({ message: 'Cannot modify form fields after registrations have started' });
+                // Only block if formFields have ACTUALLY changed
+                const newFields = JSON.stringify(req.body.formFields);
+                const oldFields = JSON.stringify(event.formFields);
+
+                // We need to be careful about Mongoose ID fields in oldFields vs potentially no IDs in newFields
+                // Simplest check: if length differs or if content differs (ignoring _id might be hard with stringify)
+
+                // Better approach for strict comparison involving IDs:
+                // Let's rely on the fact that the frontend probably sends back what it got, potentially with _ids.
+                // If the user didn't touch form builder, it should be identical?
+                // Actually, let's just use a loose check or trust the organizer knows what they are doing? 
+                // No, protecting data is key.
+
+                // Let's strip _id from oldFields for comparison if newFields doesn't have them?
+                // Or simply: If I assume the frontend sends the exact same object back if untouched.
+
+                if (newFields !== oldFields) {
+                    // Fallback: This might be too strict if order changes or _id is handled differently.
+                    // But for now, let's try to be lenient or specific.
+
+                    // If the user is just trying to change status, maybe we should prioritize that?
+                    // But they used the Edit endpoint.
+
+                    // Let's try to remove _id from both for comparison.
+                    const cleanOld = event.formFields.map(f => ({ label: f.label, type: f.type, options: f.options, required: f.required }));
+                    const cleanNew = req.body.formFields.map(f => ({ label: f.label, type: f.type, options: f.options, required: f.required }));
+
+                    if (JSON.stringify(cleanOld) !== JSON.stringify(cleanNew)) {
+                        return res.status(400).json({ message: 'Cannot modify form fields after registrations have started' });
+                    }
+                }
             }
         }
 

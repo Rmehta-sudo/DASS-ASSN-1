@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { addFeedback, getEventFeedback } = require('../controllers/feedbackController');
 const { protect } = require('../middleware/authMiddleware');
+const { addFeedback, getEventFeedback } = require('../controllers/feedbackController');
 
-router.post('/:eventId', protect, addFeedback);
-router.get('/:eventId', getEventFeedback);
+router.post('/', protect, addFeedback);
+router.get('/event/:identifier', protect, getEventFeedback);
 
 module.exports = router;

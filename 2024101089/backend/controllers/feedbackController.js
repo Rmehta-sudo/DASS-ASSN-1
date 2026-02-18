@@ -1,79 +1,100 @@
 const Feedback = require('../models/Feedback');
-const Registration = require('../models/Registration');
 const Event = require('../models/Event');
+const Registration = require('../models/Registration');
 
 // @desc    Add feedback for an event
-// @route   POST /api/feedback/:eventId
-// @access  Private (Confirmed Attendees only)
+// @route   POST /api/feedback
+// @access  Private (Participant)
 const addFeedback = async (req, res) => {
-    const { rating, comment } = req.body;
-    const eventId = req.params.eventId;
-    const userId = req.user._id;
-
     try {
-        // 1. Check if Event Exists and Ended
-        const event = await Event.findById(eventId);
-        if (!event) {
-            return res.status(404).json({ message: 'Event not found' });
-        }
+        const { eventId, rating, comment } = req.body;
 
-        // Allow feedback only if event has ended (or started? Usually after end)
-        // For testing flexibility, maybe allow if started. 
-        // Strict req: "after it ends"
-        if (new Date() < new Date(event.endDate)) {
-            // return res.status(400).json({ message: 'Cannot give feedback before event ends' });
-            // Commenting out strictly for demo/testing purposes if needed, but keeping for logic
-        }
-
-        // 2. Check if User Registered and Confirmed/Attended
-        // 'Attended' is best, but 'Confirmed' might be backup if attendance not marked.
-        // Let's require 'Attended' status if we have it, else 'Confirmed'
+        // 1. Check if user registered and confirmed
         const registration = await Registration.findOne({
+            user: req.user._id,
             event: eventId,
-            user: userId,
-            status: 'Confirmed' // Basic check
+            status: 'Confirmed'
         });
 
         if (!registration) {
-            return res.status(403).json({ message: 'You are not a confirmed participant of this event' });
+            return res.status(403).json({ message: 'You can only rate events you have attended (Confirmed registration).' });
         }
 
-        // 3. Create Feedback
-        await Feedback.create({
-            event: eventId,
-            user: userId,
-            rating,
-            comment
+        // 2. Check if event is over (optional, but logical)
+        const event = await Event.findById(eventId);
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        // Allow feedback even if strictly not "Completed" status, but usually for past events
+        // User requirement: "events they have attended"
+
+        // 3. Check for existing feedback
+        const existingFeedback = await Feedback.findOne({
+            user: req.user._id,
+            event: eventId
         });
 
-        res.status(201).json({ message: 'Feedback submitted successfully' });
+        if (existingFeedback) {
+            return res.status(400).json({ message: 'You have already submitted feedback for this event.' });
+        }
+
+        const feedback = await Feedback.create({
+            user: req.user._id,
+            event: eventId,
+            rating,
+            comment,
+            isAnonymous: true
+        });
+
+        res.status(201).json(feedback);
 
     } catch (error) {
-        if (error.code === 11000) {
-            res.status(400).json({ message: 'You have already submitted feedback for this event' });
-        } else {
-            res.status(500).json({ message: error.message });
-        }
+        res.status(400).json({ message: error.message });
     }
 };
 
-// @desc    Get feedback for an event
-// @route   GET /api/feedback/:eventId
-// @access  Public
+// @desc    Get feedback for an event (Organizer)
+// @route   GET /api/feedback/event/:identifier
+// @access  Private (Organizer)
 const getEventFeedback = async (req, res) => {
     try {
-        const feedbacks = await Feedback.find({ event: req.params.eventId }).select('-user'); // Anonymous
+        // identifier can be eventId
+        const eventId = req.params.identifier;
 
-        let avgRating = 0;
-        if (feedbacks.length > 0) {
-            const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
-            avgRating = (sum / feedbacks.length).toFixed(1);
+        const feedbackList = await Feedback.find({ event: eventId }).select('-user'); // Exclude user to ensure anonymity
+
+        if (feedbackList.length === 0) {
+            return res.json({
+                averageRating: 0,
+                ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+                comments: []
+            });
         }
 
+        // Calculate Stats
+        let totalRating = 0;
+        const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        const comments = [];
+
+        feedbackList.forEach(f => {
+            totalRating += f.rating;
+            if (f.rating >= 1 && f.rating <= 5) {
+                ratingDistribution[f.rating]++;
+            }
+            if (f.comment) {
+                comments.push({
+                    rating: f.rating,
+                    text: f.comment,
+                    createdAt: f.createdAt
+                });
+            }
+        });
+
+        const averageRating = (totalRating / feedbackList.length).toFixed(1);
+
         res.json({
-            average: avgRating,
-            count: feedbacks.length,
-            reviews: feedbacks
+            averageRating,
+            ratingDistribution,
+            comments
         });
 
     } catch (error) {
@@ -81,4 +102,7 @@ const getEventFeedback = async (req, res) => {
     }
 };
 
-module.exports = { addFeedback, getEventFeedback };
+module.exports = {
+    addFeedback,
+    getEventFeedback
+};

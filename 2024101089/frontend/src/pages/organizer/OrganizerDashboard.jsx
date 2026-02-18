@@ -13,6 +13,9 @@ const OrganizerDashboard = () => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState('Pending');
+    const [feedbackModal, setFeedbackModal] = useState({ open: false, eventId: null, eventName: '', stats: null });
+    const [loadingFeedback, setLoadingFeedback] = useState(false);
+    const [activeFeedbackFilter, setActiveFeedbackFilter] = useState(null);
 
     useEffect(() => {
         // Double check auth
@@ -54,6 +57,23 @@ const OrganizerDashboard = () => {
         } catch (error) {
             console.error("Error fetching registrations", error);
             setLoadingWaitlist(false);
+        }
+    };
+
+    const openFeedback = async (eventId, eventName) => {
+        setLoadingFeedback(true);
+        setFeedbackModal({ open: true, eventId, eventName, stats: null });
+        setActiveFeedbackFilter(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const { data } = await axios.get(`${API_URL}/feedback/event/${eventId}`, config);
+            setFeedbackModal({ open: true, eventId, eventName, stats: data });
+            setLoadingFeedback(false);
+        } catch (error) {
+            console.error("Error fetching feedback", error);
+            setLoadingFeedback(false);
         }
     };
 
@@ -132,7 +152,7 @@ const OrganizerDashboard = () => {
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-bold text-lg text-indigo-600 line-clamp-1" title={event.name}>{event.name}</h3>
                                         <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${event.status === 'Published' ? 'bg-green-100 text-green-700' :
-                                                event.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                            event.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
                                             }`}>{event.status}</span>
                                     </div>
                                     <p className="text-gray-400 text-xs font-medium">{new Date(event.startDate).toLocaleDateString()}</p>
@@ -162,13 +182,21 @@ const OrganizerDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-                                    <button
-                                        onClick={() => openWaitlist(event._id, event.name)}
-                                        className="text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors"
-                                    >
-                                        Manage Registrations
-                                    </button>
-                                    <Link to={`/organizer/events/edit/${event._id}`} className="text-gray-500 text-sm hover:text-gray-900 transition-colors">Edit Event</Link>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => openWaitlist(event._id, event.name)}
+                                            className="text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors"
+                                        >
+                                            Registrations
+                                        </button>
+                                        <button
+                                            onClick={() => openFeedback(event._id, event.name)}
+                                            className="text-yellow-600 text-sm font-semibold hover:text-yellow-800 transition-colors"
+                                        >
+                                            Feedback
+                                        </button>
+                                    </div>
+                                    <Link to={`/organizer/events/edit/${event._id}`} className="text-gray-500 text-sm hover:text-gray-900 transition-colors">Edit</Link>
                                 </div>
                             </div>
                         ))}
@@ -195,8 +223,8 @@ const OrganizerDashboard = () => {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                                            ? 'border-indigo-600 text-indigo-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        ? 'border-indigo-600 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     {tab}
@@ -254,7 +282,7 @@ const OrganizerDashboard = () => {
 
                                                 {reg.paymentProof && (
                                                     <div className="mt-3">
-                                                        <a href={reg.paymentProof} target="_blank" rel="noopener noreferrer"
+                                                        <a href={reg.paymentProof.startsWith('http') ? reg.paymentProof : `https://${reg.paymentProof}`} target="_blank" rel="noopener noreferrer"
                                                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
                                                         >
                                                             <span>📎 View Payment Proof</span>
@@ -299,6 +327,95 @@ const OrganizerDashboard = () => {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Feedback Modal */}
+            {feedbackModal.open && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-white">Feedback: {feedbackModal.eventName}</h3>
+                            <button onClick={() => setFeedbackModal({ open: false, eventId: null, eventName: '', stats: null })} className="text-white hover:text-gray-200 text-2xl">&times;</button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+                            {loadingFeedback ? (
+                                <div className="text-center py-10">Loading feedback...</div>
+                            ) : !feedbackModal.stats || feedbackModal.stats.comments.length === 0 ? (
+                                <div className="text-center py-10 text-gray-500">No feedback received yet.</div>
+                            ) : (
+                                <div className="flex flex-col gap-6">
+                                    {/* Summary Stats */}
+                                    <div className="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                                        <div className="flex flex-col items-center justify-center min-w-[150px]">
+                                            <span className="text-5xl font-bold text-gray-800">{feedbackModal.stats.averageRating}</span>
+                                            <div className="flex text-yellow-400 text-xl my-2">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <span key={i}>{i < Math.round(Number(feedbackModal.stats.averageRating)) ? '★' : '☆'}</span>
+                                                ))}
+                                            </div>
+                                            <span className="text-sm text-gray-500">{feedbackModal.stats.comments.length} Reviews</span>
+                                        </div>
+
+                                        <div className="flex-1 space-y-2">
+                                            {[5, 4, 3, 2, 1].map(star => {
+                                                const count = feedbackModal.stats.ratingDistribution[star] || 0;
+                                                const total = feedbackModal.stats.comments.length; // Approximate total from comments/ratings sync
+                                                const percent = total > 0 ? (count / total) * 100 : 0;
+                                                return (
+                                                    <div key={star} className="flex items-center text-sm gap-2">
+                                                        <span className="w-3">{star}</span>
+                                                        <span className="text-yellow-400">★</span>
+                                                        <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-yellow-400" style={{ width: `${percent}%` }}></div>
+                                                        </div>
+                                                        <span className="w-8 text-right text-gray-500">{count}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Filter & Comments */}
+                                    <div>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-bold text-gray-800">Comments</h4>
+                                            <select
+                                                className="border rounded px-3 py-1 text-sm bg-white"
+                                                onChange={(e) => setActiveFeedbackFilter(Number(e.target.value) || null)}
+                                            >
+                                                <option value="">All Ratings</option>
+                                                <option value="5">5 Stars</option>
+                                                <option value="4">4 Stars</option>
+                                                <option value="3">3 Stars</option>
+                                                <option value="2">2 Stars</option>
+                                                <option value="1">1 Star</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {feedbackModal.stats.comments
+                                                .filter(c => activeFeedbackFilter ? c.rating === activeFeedbackFilter : true)
+                                                .map((comment, idx) => (
+                                                    <div key={idx} className="bg-white p-4 rounded border border-gray-200 shadow-sm">
+                                                        <div className="flex justify-between mb-2">
+                                                            <div className="flex text-yellow-500 text-sm">
+                                                                {[...Array(comment.rating)].map((_, i) => <span key={i}>★</span>)}
+                                                            </div>
+                                                            <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                        <p className="text-gray-700 italic">"{comment.text}"</p>
+                                                    </div>
+                                                ))}
+                                            {feedbackModal.stats.comments.filter(c => activeFeedbackFilter ? c.rating === activeFeedbackFilter : true).length === 0 && (
+                                                <p className="text-center text-gray-500 py-4">No comments for this rating.</p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

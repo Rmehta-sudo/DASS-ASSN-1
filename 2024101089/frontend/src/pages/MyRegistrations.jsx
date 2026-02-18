@@ -107,8 +107,8 @@ const MyRegistrations = () => {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab
-                                    ? 'bg-indigo-100 text-indigo-700 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                                ? 'bg-indigo-100 text-indigo-700 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
                             {tab}
@@ -195,6 +195,16 @@ const MyRegistrations = () => {
                                             {reg.event?.startDate ? new Date(reg.event.startDate).toLocaleDateString() : 'TBA'}
                                         </p>
                                     </div>
+
+                                    {/* Rate Button for Completed/Past Confirmed Events */}
+                                    {activeTab === 'Completed' && reg.status === 'Confirmed' && (
+                                        <button
+                                            onClick={() => openFeedbackModal(reg)}
+                                            className="w-full text-center py-2 px-4 rounded-lg bg-yellow-400 text-yellow-900 font-medium hover:bg-yellow-500 transition shadow-sm"
+                                        >
+                                            Rate Event ⭐
+                                        </button>
+                                    )}
 
                                     <Link
                                         to={`/events/${reg.event?._id}`}

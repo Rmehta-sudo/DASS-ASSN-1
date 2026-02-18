@@ -52,14 +52,23 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/events', require('./routes/eventRoutes'));
-app.use('/api/registrations', require('./routes/registrationRoutes'));
-app.use('/api/teams', require('./routes/teamRoutes'));
-app.use('/api/attendance', require('./routes/attendanceRoutes'));
-app.use('/api/chat', require('./routes/chatRoutes'));
-app.use('/api/feedback', require('./routes/feedbackRoutes')); // New route
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const registrationRoutes = require('./routes/registrationRoutes');
+const teamRoutes = require('./routes/teamRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes'); // Import feedbackRoutes
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/registrations', registrationRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/feedback', feedbackRoutes); // Use feedbackRoutes
 
 // Socket.io Logic
 io.on('connection', (socket) => {
