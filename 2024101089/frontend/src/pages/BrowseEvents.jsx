@@ -12,7 +12,7 @@ const BrowseEvents = () => {
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
-    const [statusFilter, setStatusFilter] = useState('All');
+
     const [typeFilter, setTypeFilter] = useState('All');
     const [showRecommended, setShowRecommended] = useState(false);
 
