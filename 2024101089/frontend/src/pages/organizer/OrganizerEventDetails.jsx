@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../../apiConfig';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import DiscussionForum from '../../components/DiscussionForum';
+import { useAuth } from '../../context/AuthContext';
 
 const OrganizerEventDetails = () => {
     const { id } = useParams();
@@ -11,7 +13,8 @@ const OrganizerEventDetails = () => {
     const [registrations, setRegistrations] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview'); // overview, participants, analytics
+    const [activeTab, setActiveTab] = useState('overview'); // overview, participants, analytics, discussion
+    const { user } = useAuth();
 
     // participants filter
     const [filterStatus, setFilterStatus] = useState('All');
@@ -116,7 +119,7 @@ const OrganizerEventDetails = () => {
                 {/* Tabs */}
                 <div className="border-b border-gray-200 mb-6">
                     <nav className="-mb-px flex space-x-8">
-                        {['Overview', 'Analytics', 'Participants'].map(tab => (
+                        {['Overview', 'Analytics', 'Participants', 'Discussion'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab.toLowerCase())}
@@ -276,6 +279,12 @@ const OrganizerEventDetails = () => {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'discussion' && (
+                        <div className="bg-white shadow rounded-lg p-6">
+                            <DiscussionForum eventId={event._id} user={user} isOrganizer={true} />
                         </div>
                     )}
                 </div>

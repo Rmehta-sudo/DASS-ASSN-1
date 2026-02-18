@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Signup = () => {
         collegeName: '',
     });
     const [error, setError] = useState('');
+    const [captchaToken, setCaptchaToken] = useState(null);
     const { register } = useAuth();
     const navigate = useNavigate();
 
@@ -22,6 +24,11 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!captchaToken) {
+            setError('Please complete the CAPTCHA');
+            return;
+        }
 
         // Basic validation
         if (formData.email.endsWith('iiit.ac.in')) {
@@ -34,11 +41,12 @@ const Signup = () => {
             }
         }
 
-        const result = await register(formData);
+        const result = await register({ ...formData, captchaToken });
         if (result.success) {
             navigate('/onboarding');
         } else {
             setError(result.message);
+            setCaptchaToken(null);
         }
     };
 
@@ -92,6 +100,13 @@ const Signup = () => {
                                 onChange={handleChange} />
                         </div>
                     )}
+
+                    <div className="mt-4 flex justify-center">
+                        <ReCAPTCHA
+                            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                            onChange={(token) => setCaptchaToken(token)}
+                        />
+                    </div>
 
                     <div className="flex items-baseline justify-between">
                         <button className="px-6 py-2 mt-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-900 w-full">Sign Up</button>

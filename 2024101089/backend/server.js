@@ -70,6 +70,9 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/feedback', feedbackRoutes); // Use feedbackRoutes
 
+// Make io accessible to our router
+app.set('io', io);
+
 // Socket.io Logic
 io.on('connection', (socket) => {
     console.log('User Connected:', socket.id);
@@ -82,8 +85,8 @@ io.on('connection', (socket) => {
 
     // Send Message
     socket.on('send_message', async (data) => {
-        // data: { room, content, senderId, type (event/team), objectId }
-        const { room, content, senderId, type, objectId } = data; // objectId = eventId or teamId
+        // data: { room, content, senderId, type (event/team), objectId, parentMessage, messageType }
+        const { room, content, senderId, type, objectId, parentMessage, messageType } = data; // objectId = eventId or teamId
 
         // Save to DB
         try {
@@ -91,12 +94,20 @@ io.on('connection', (socket) => {
                 sender: senderId,
                 content,
                 event: type === 'event' ? objectId : null,
-                team: type === 'team' ? objectId : null
+                team: type === 'team' ? objectId : null,
+                parentMessage: parentMessage || null,
+                type: messageType || 'text'
             };
-            await Message.create(messageData);
+            const msg = await Message.create(messageData);
 
-            // Broadcast to room (including sender for simplicity, or exclude sender on frontend)
-            io.to(room).emit('receive_message', data);
+            // Populate sender for frontend
+            await msg.populate('sender', 'firstName lastName');
+            if (msg.parentMessage) {
+                await msg.populate('parentMessage');
+            }
+
+            // Broadcast to room
+            io.to(room).emit('receive_message', msg);
         } catch (err) {
             console.error("Error saving message:", err);
         }

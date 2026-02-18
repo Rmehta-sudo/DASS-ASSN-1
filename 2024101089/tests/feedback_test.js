@@ -12,16 +12,17 @@ const testFeedback = async () => {
         const registerUser = async (name) => {
             const email = `${name.toLowerCase()}${Date.now()}@feedback.com`;
             await axios.post(`${API_URL}/auth/register`, {
-                firstName: name, lastName: "Test", email, password: "password123", contactNumber: "9999999999"
+                firstName: name, lastName: "Test", email, password: "password123", contactNumber: "9999999999",
+                captchaToken: "test-token"
             });
-            const res = await axios.post(`${API_URL}/auth/login`, { email, password: "password123" });
+            const res = await axios.post(`${API_URL}/auth/login`, { email, password: "password123", captchaToken: "test-token" });
             return res.data.token;
         };
 
         userToken = await registerUser("Reviewer");
 
         // Login Admin to create Organizer
-        const adminLogin = await axios.post(`${API_URL}/auth/login`, { email: 'admin@felicity.iiit.ac.in', password: 'adminpassword' });
+        const adminLogin = await axios.post(`${API_URL}/auth/login`, { email: 'admin@felicity.iiit.ac.in', password: 'thisisadmin', captchaToken: "test-token" });
         const adminToken = adminLogin.data.token;
 
         const orgEmail = `org_feed_${Date.now()}@clubs.iiit.ac.in`;
@@ -29,7 +30,7 @@ const testFeedback = async () => {
             name: "Feedback Club " + Date.now(), category: "Cultural", email: orgEmail, description: "Test"
         }, { headers: { Authorization: `Bearer ${adminToken}` } });
 
-        const orgLogin = await axios.post(`${API_URL}/auth/login`, { email: orgEmail, password: 'password123' });
+        const orgLogin = await axios.post(`${API_URL}/auth/login`, { email: orgEmail, password: 'thisisclub', captchaToken: "test-token" });
         const organizerToken = orgLogin.data.token;
 
         // --- 1. Create ENDED Event ---
@@ -65,7 +66,8 @@ const testFeedback = async () => {
         const rating = 5;
         const comment = "Great event!";
 
-        await axios.post(`${API_URL}/feedback/${eventId}`, {
+        await axios.post(`${API_URL}/feedback`, {
+            eventId,
             rating,
             comment
         }, { headers: { Authorization: `Bearer ${userToken}` } });
@@ -74,9 +76,9 @@ const testFeedback = async () => {
 
         // --- 4. Verify Feedback ---
         console.log("\n4. Verifying Feedback Retrieval...");
-        const feedRes = await axios.get(`${API_URL}/feedback/${eventId}`);
+        const feedRes = await axios.get(`${API_URL}/feedback/event/${eventId}`, { headers: { Authorization: `Bearer ${organizerToken}` } });
 
-        if (feedRes.data.reviews.length > 0 && feedRes.data.reviews[0].comment === comment) {
+        if (feedRes.data.comments.length > 0 && feedRes.data.comments[0].text === comment) {
             console.log("✅ Feedback Retrieved Successfully");
         } else {
             console.error("❌ Feedback Not Found in Response");
@@ -85,7 +87,8 @@ const testFeedback = async () => {
         // --- 5. Verify Duplicate fails ---
         console.log("\n5. Testing Duplicate Submission...");
         try {
-            await axios.post(`${API_URL}/feedback/${eventId}`, {
+            await axios.post(`${API_URL}/feedback`, {
+                eventId,
                 rating: 1,
                 comment: "Bad duplicate"
             }, { headers: { Authorization: `Bearer ${userToken}` } });

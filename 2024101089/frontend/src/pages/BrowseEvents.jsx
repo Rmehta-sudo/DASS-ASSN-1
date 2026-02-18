@@ -16,7 +16,9 @@ const BrowseEvents = () => {
 
     const [typeFilter, setTypeFilter] = useState('All');
     const [eligibilityFilter, setEligibilityFilter] = useState('All');
-    const [dateFilter, setDateFilter] = useState('');
+
+    const [startDateFilter, setStartDateFilter] = useState('');
+    const [endDateFilter, setEndDateFilter] = useState('');
     const [followedOnly, setFollowedOnly] = useState(false);
 
     const [showRecommended, setShowRecommended] = useState(false);
@@ -56,9 +58,19 @@ const BrowseEvents = () => {
             result = result.filter(e => e.eligibility === eligibilityFilter);
         }
 
-        if (dateFilter) {
-            const filterDate = new Date(dateFilter);
-            result = result.filter(e => new Date(e.startDate) >= filterDate);
+        if (startDateFilter) {
+            const start = new Date(startDateFilter);
+            result = result.filter(e => new Date(e.startDate) >= start);
+        }
+
+        if (endDateFilter) {
+            const end = new Date(endDateFilter);
+            // Include end date fully (end of day)
+            end.setHours(23, 59, 59, 999);
+            result = result.filter(e => {
+                const eventDate = new Date(e.startDate); // Primary check on start date
+                return eventDate <= end;
+            });
         }
 
         if (followedOnly && user) {
@@ -66,7 +78,7 @@ const BrowseEvents = () => {
         }
 
         setFilteredEvents(result);
-    }, [events, statusFilter, typeFilter, searchTerm, eligibilityFilter, dateFilter, followedOnly, user]);
+    }, [events, statusFilter, typeFilter, searchTerm, eligibilityFilter, startDateFilter, endDateFilter, followedOnly, user]);
 
     const fetchEvents = async () => {
         try {
@@ -194,7 +206,7 @@ const BrowseEvents = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <select
                         className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 focus:ring-2 focus:ring-indigo-500"
                         value={statusFilter}
@@ -228,13 +240,27 @@ const BrowseEvents = () => {
                         <option value="IIIT Only">IIIT Only</option>
                     </select>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="date"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                        />
+                    <div className="flex items-center gap-2 col-span-1 md:col-span-1">
+                        <div className="flex flex-col w-full">
+                            <span className="text-xs text-gray-500 ml-1">From</span>
+                            <input
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
+                                value={startDateFilter}
+                                onChange={(e) => setStartDateFilter(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 col-span-1 md:col-span-1">
+                        <div className="flex flex-col w-full">
+                            <span className="text-xs text-gray-500 ml-1">To</span>
+                            <input
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
+                                value={endDateFilter}
+                                onChange={(e) => setEndDateFilter(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

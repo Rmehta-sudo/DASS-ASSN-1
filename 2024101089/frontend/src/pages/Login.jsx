@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [captchaToken, setCaptchaToken] = useState(null);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        const result = await login(email, password);
+
+        if (!captchaToken) {
+            setError('Please complete the CAPTCHA');
+            return;
+        }
+
+        const result = await login(email, password, captchaToken);
         if (result.success) {
             // Check role from result or localStorage
             if (result.user.role === 'admin') {
@@ -24,6 +32,7 @@ const Login = () => {
             }
         } else {
             setError(result.message);
+            setCaptchaToken(null); // Reset CAPTCHA on error
         }
     };
 
@@ -48,6 +57,14 @@ const Login = () => {
                             <Link to="/reset-request" className="text-sm text-gray-500 hover:underline">Organizer Issue?</Link>
                         </div>
                     </div>
+
+                    <div className="mt-4 flex justify-center">
+                        <ReCAPTCHA
+                            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                            onChange={(token) => setCaptchaToken(token)}
+                        />
+                    </div>
+
                     <div className="flex items-baseline justify-between">
                         <button className="px-6 py-2 mt-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-900">Login</button>
                     </div>

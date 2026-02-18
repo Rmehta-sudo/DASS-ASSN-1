@@ -39,6 +39,8 @@ const FormBuilder = ({ formFields, setFormFields }) => {
                 <button type="button" onClick={() => addField('text')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Text</button>
                 <button type="button" onClick={() => addField('number')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Number</button>
                 <button type="button" onClick={() => addField('dropdown')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Dropdown</button>
+                <button type="button" onClick={() => addField('checkbox')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Checkbox</button>
+                <button type="button" onClick={() => addField('file')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ File Upload</button>
             </div>
 
             {formFields.map((field, index) => (
@@ -62,7 +64,7 @@ const FormBuilder = ({ formFields, setFormFields }) => {
                         <span className="text-sm text-gray-600">Required?</span>
                     </div>
 
-                    {field.type === 'dropdown' && (
+                    {(field.type === 'dropdown' || field.type === 'checkbox') && (
                         <div>
                             <label className="block text-xs text-gray-500">Options (comma separated)</label>
                             <input type="text" className="w-full border px-2 py-1 text-sm rounded"

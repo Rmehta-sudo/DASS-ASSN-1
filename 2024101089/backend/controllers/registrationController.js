@@ -79,8 +79,9 @@ const registerEvent = async (req, res) => {
                         }
                     }
 
-                    // Deduct Stock
-                    item.stock -= selection.quantity;
+                    // Deduct Stock - MOVED TO APPROVAL
+                    // item.stock -= selection.quantity;
+                    // totalCost += item.price * selection.quantity;
                     totalCost += item.price * selection.quantity;
                 }
             } else if (event.type === 'Merchandise') {
@@ -234,9 +235,25 @@ const updateRegistrationStatus = async (req, res) => {
         if (status === 'Confirmed' && !registration.ticketId) {
             registration.ticketId = generateTicketId();
 
-            // Update event count
+            // Update event count for Normal Events
             const event = await Event.findById(registration.event);
-            event.currentRegistrations = event.currentRegistrations + 1;
+            if (event.type !== 'Merchandise') {
+                event.currentRegistrations = event.currentRegistrations + 1;
+            } else {
+                // For Merchandise, deduct stock NOW
+                // We need to re-validate stock here because it wasn't deducted at registration
+                const selection = registration.merchandiseSelection;
+                if (selection && selection.length > 0) {
+                    for (const sel of selection) {
+                        const item = event.merchandise.id(sel.itemId);
+                        if (!item) throw new Error(`Item ${sel.itemId} not found`);
+                        if (item.stock < sel.quantity) {
+                            throw new Error(`Insufficient stock for ${item.name}. Cannot approve.`);
+                        }
+                        item.stock -= sel.quantity;
+                    }
+                }
+            }
             await event.save();
         }
 

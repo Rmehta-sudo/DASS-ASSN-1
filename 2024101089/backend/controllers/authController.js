@@ -2,14 +2,22 @@ const User = require('../models/User');
 const Organizer = require('../models/Organizer');
 const generateToken = require('../utils/generateToken');
 
+const verifyCaptcha = require('../utils/captcha');
+
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
 // @access  Public
 const authUser = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, captchaToken } = req.body;
 
     // Student style debugging
     console.log("Login attempt for:", email);
+
+    // Verify CAPTCHA
+    const captchaResult = await verifyCaptcha(captchaToken);
+    if (!captchaResult.success) {
+        return res.status(400).json({ message: captchaResult.message || 'CAPTCHA verification failed' });
+    }
 
     const user = await User.findOne({ email }).populate('following', 'organizerName category');
 
@@ -43,9 +51,15 @@ const authUser = async (req, res) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { firstName, lastName, email, password, contactNumber, collegeName } = req.body;
+    const { firstName, lastName, email, password, contactNumber, collegeName, captchaToken } = req.body;
 
     console.log("Registering user:", email);
+
+    // Verify CAPTCHA
+    const captchaResult = await verifyCaptcha(captchaToken);
+    if (!captchaResult.success) {
+        return res.status(400).json({ message: captchaResult.message || 'CAPTCHA verification failed' });
+    }
 
     const userExists = await User.findOne({ email });
 

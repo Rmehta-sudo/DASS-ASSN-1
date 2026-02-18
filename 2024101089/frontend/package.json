@@ -13,8 +13,10 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.5",
+    "html5-qrcode": "^2.3.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-google-recaptcha": "^3.1.0",
     "react-router-dom": "^7.13.0",
     "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.3"

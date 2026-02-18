@@ -15,6 +15,29 @@ const messageSchema = mongoose.Schema({
     content: {
         type: String,
         required: true
+    },
+    // Threading
+    parentMessage: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+        default: null
+    },
+    // Moderation
+    isPinned: {
+        type: Boolean,
+        default: false
+    },
+    // Reactions: Map of userId -> reactionType (e.g. 'like', 'heart')
+    reactions: {
+        type: Map,
+        of: String,
+        default: {}
+    },
+    // Message Type
+    type: {
+        type: String,
+        enum: ['text', 'announcement', 'question'],
+        default: 'text'
     }
 }, {
     timestamps: true

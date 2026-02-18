@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     // Login function
-    const login = async (email, password) => {
+    const login = async (email, password, captchaToken) => {
         try {
             const config = {
                 headers: {
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
                 },
             };
 
-            const { data } = await axios.post(`${API_URL}/auth/login`, { email, password }, config);
+            const { data } = await axios.post(`${API_URL}/auth/login`, { email, password, captchaToken }, config);
 
             console.log('Login success:', data);
             localStorage.setItem('user', JSON.stringify(data));

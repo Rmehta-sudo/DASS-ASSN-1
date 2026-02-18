@@ -327,7 +327,11 @@ const EventDetails = () => {
                         <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 h-[600px] flex flex-col">
                             <h3 className="text-xl font-bold mb-4">Live Discussion</h3>
                             <div className="flex-1 overflow-hidden">
-                                <DiscussionForum eventId={event._id} user={user} />
+                                <DiscussionForum
+                                    eventId={event._id}
+                                    user={user}
+                                    isOrganizer={user?.organizerId === event.organizer || user?.role === 'organizer'}
+                                />
                             </div>
                         </div>
                     )}

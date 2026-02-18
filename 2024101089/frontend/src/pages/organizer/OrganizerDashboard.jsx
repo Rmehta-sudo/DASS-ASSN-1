@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../../apiConfig';
+import QRScanner from '../../components/QRScanner';
 
 const OrganizerDashboard = () => {
     const [events, setEvents] = useState([]);
@@ -16,6 +17,11 @@ const OrganizerDashboard = () => {
     const [feedbackModal, setFeedbackModal] = useState({ open: false, eventId: null, eventName: '', stats: null });
     const [loadingFeedback, setLoadingFeedback] = useState(false);
     const [activeFeedbackFilter, setActiveFeedbackFilter] = useState(null);
+
+    // Attendance State
+    const [attendanceModal, setAttendanceModal] = useState({ open: false, eventId: null, eventName: '', stats: null, logs: [] });
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
+    const [manualTicketId, setManualTicketId] = useState('');
 
     useEffect(() => {
         // Double check auth
@@ -97,7 +103,8 @@ const OrganizerDashboard = () => {
             // alert(`Registration ${newStatus.toLowerCase()} successfully!`); // Optional toast
         } catch (error) {
             console.error("Error updating status", error);
-            alert('Failed to update status');
+            const msg = error.response?.data?.message || 'Failed to update status';
+            alert(msg);
         }
     };
 
@@ -108,6 +115,95 @@ const OrganizerDashboard = () => {
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    // Attendance Functions
+    const openAttendance = async (eventId, eventName) => {
+        setLoadingAttendance(true);
+        setAttendanceModal({ open: true, eventId, eventName, stats: null, logs: [] });
+        await fetchAttendanceStats(eventId);
+    };
+
+    const fetchAttendanceStats = async (eventId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const { data } = await axios.get(`${API_URL}/attendance/stats/${eventId}`, config);
+            setAttendanceModal(prev => ({
+                ...prev,
+                eventId,
+                stats: {
+                    total: data.totalRegistrations,
+                    attended: data.attendedCount
+                },
+                logs: data.recentScans
+            }));
+            setLoadingAttendance(false);
+        } catch (error) {
+            console.error("Error fetching attendance stats", error);
+            setLoadingAttendance(false);
+        }
+    };
+
+    const handleScan = async (ticketId) => {
+        if (!ticketId) return;
+        await markAttendance(ticketId);
+    };
+
+    const handleManualSubmit = async (e) => {
+        e.preventDefault();
+        if (!manualTicketId) return;
+        await markAttendance(manualTicketId);
+        setManualTicketId('');
+    };
+
+    const markAttendance = async (ticketId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            const { data } = await axios.post(`${API_URL}/attendance/mark`, { ticketId }, config);
+
+            // Add to logs locally
+            const newLog = {
+                user: data.user,
+                updatedAt: new Date().toISOString()
+            };
+
+            setAttendanceModal(prev => ({
+                ...prev,
+                stats: { ...prev.stats, attended: prev.stats.attended + 1 },
+                logs: [newLog, ...(prev.logs || [])]
+            }));
+
+            // alert(`Success: ${data.message}`); // Too intrusive for scanner
+        } catch (error) {
+            console.error("Attendance Error:", error);
+            const msg = error.response?.data?.message || 'Error marking attendance';
+            // Prevent alert spam on duplicate scans?
+            if (msg !== 'Unknown Error') alert(msg);
+        }
+    };
+
+    const exportAttendance = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/attendance/export/${attendanceModal.eventId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob',
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `attendance_${attendanceModal.eventName}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Export failed", error);
+            alert("Export failed");
+        }
     };
 
     const getFilteredRegistrations = () => {
@@ -196,6 +292,12 @@ const OrganizerDashboard = () => {
                                             className="text-yellow-600 text-sm font-semibold hover:text-yellow-800 transition-colors"
                                         >
                                             Feedback
+                                        </button>
+                                        <button
+                                            onClick={() => openAttendance(event._id, event.name)}
+                                            className="text-green-600 text-sm font-semibold hover:text-green-800 transition-colors"
+                                        >
+                                            Attendance
                                         </button>
                                     </div>
                                     <Link to={`/organizer/events/edit/${event._id}`} className="text-gray-500 text-sm hover:text-gray-900 transition-colors">Edit</Link>
@@ -367,7 +469,7 @@ const OrganizerDashboard = () => {
                                                 return (
                                                     <div key={star} className="flex items-center text-sm gap-2">
                                                         <span className="w-3">{star}</span>
-                                                        <span className="text-yellow-400">Rating: {comment.rating}/5</span>
+                                                        <span className="text-yellow-400">Rating: {star}/5</span>
                                                         <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                                                             <div className="h-full bg-yellow-400" style={{ width: `${percent}%` }}></div>
                                                         </div>
@@ -420,6 +522,83 @@ const OrganizerDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Attendance Modal */}
+            {attendanceModal.open && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="bg-green-600 px-6 py-4 flex justify-between items-center text-white">
+                            <div>
+                                <h3 className="text-xl font-bold">Attendance: {attendanceModal.eventName}</h3>
+                                {attendanceModal.stats && (
+                                    <p className="text-sm opacity-90">
+                                        {attendanceModal.stats.attended} / {attendanceModal.stats.total} Checked In
+                                    </p>
+                                )}
+                            </div>
+                            <button onClick={() => setAttendanceModal({ open: false, eventId: null, eventName: '', stats: null, logs: [] })} className="text-white hover:text-gray-200 text-3xl font-light">&times;</button>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row h-full overflow-hidden">
+                            {/* Left: Scanner & Manual Input */}
+                            <div className="w-full md:w-1/2 p-6 bg-gray-50 flex flex-col gap-6 border-r">
+                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <h4 className="font-bold text-gray-700 mb-3 text-center">Scan Ticket QR</h4>
+                                    <QRScanner onScan={handleScan} />
+                                </div>
+
+                                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <h4 className="font-bold text-gray-700 mb-2">Manual Entry</h4>
+                                    <form onSubmit={handleManualSubmit} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={manualTicketId}
+                                            onChange={(e) => setManualTicketId(e.target.value)}
+                                            placeholder="Enter Ticket ID (e.g. FEL-1234)"
+                                            className="flex-1 border rounded px-3 py-2 text-sm uppercase"
+                                        />
+                                        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">
+                                            Mark
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <button
+                                    onClick={exportAttendance}
+                                    className="w-full py-3 bg-gray-800 text-white rounded-lg font-semibold shadow hover:bg-gray-900 transition flex items-center justify-center gap-2"
+                                >
+                                    <span>Download Attendance CSV</span>
+                                </button>
+                            </div>
+
+                            {/* Right: Live Logs & Stats */}
+                            <div className="w-full md:w-1/2 p-0 flex flex-col bg-white">
+                                <div className="p-4 border-b bg-gray-50">
+                                    <h4 className="font-bold text-gray-700">Live Activity</h4>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                    {attendanceModal.logs && attendanceModal.logs.length > 0 ? (
+                                        attendanceModal.logs.map((log, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-3 bg-green-50 border border-green-100 rounded-lg animate-fade-in">
+                                                <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold text-xs">
+                                                    {log.user?.firstName?.charAt(0)}{log.user?.lastName?.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm text-gray-800">{log.user?.firstName} {log.user?.lastName}</p>
+                                                    <p className="text-xs text-gray-500">{new Date(log.updatedAt).toLocaleTimeString()}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-center text-gray-400 mt-10">No scans yet.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

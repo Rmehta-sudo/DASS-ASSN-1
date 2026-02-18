@@ -44,4 +44,67 @@ const markAttendance = async (req, res) => {
     }
 };
 
-module.exports = { markAttendance };
+// @desc    Get attendance statistics for an event
+// @route   GET /api/attendance/stats/:eventId
+// @access  Private/Organizer
+const getAttendanceStats = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const totalRegistrations = await Registration.countDocuments({ event: eventId, status: 'Confirmed' });
+        const attendedCount = await Registration.countDocuments({ event: eventId, status: 'Confirmed', attended: true });
+
+        // Get recent scans
+        const recentScans = await Registration.find({ event: eventId, status: 'Confirmed', attended: true })
+            .sort({ updatedAt: -1 })
+            .limit(10)
+            .populate('user', 'firstName lastName email');
+
+        res.json({
+            totalRegistrations,
+            attendedCount,
+            recentScans
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Export attendance report as CSV
+// @route   GET /api/attendance/export/:eventId
+// @access  Private/Organizer
+const exportAttendance = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const registrations = await Registration.find({ event: eventId, status: 'Confirmed' })
+            .populate('user', 'firstName lastName email contactNumber collegeName')
+            .sort({ attended: -1, 'user.firstName': 1 }); // Attended first
+
+        const fields = ['Ticket ID', 'Name', 'Email', 'Contact', 'College', 'Attended', 'Check-in Time'];
+        const csvRows = [fields.join(',')];
+
+        registrations.forEach(reg => {
+            const checkInTime = reg.attended ? new Date(reg.updatedAt).toLocaleString() : '-';
+            const row = [
+                reg.ticketId,
+                `"${reg.user.firstName} ${reg.user.lastName}"`,
+                reg.user.email,
+                reg.user.contactNumber || '',
+                `"${reg.user.collegeName || ''}"`,
+                reg.attended ? 'Yes' : 'No',
+                checkInTime
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        const csvString = csvRows.join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="attendance_report_${eventId}.csv"`);
+        res.status(200).send(csvString);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { markAttendance, getAttendanceStats, exportAttendance };

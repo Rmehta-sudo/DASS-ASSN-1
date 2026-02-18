@@ -19,8 +19,10 @@ const FeedbackForm = ({ eventId, registrationStatus, eventEndDate }) => {
 
     const fetchFeedback = async () => {
         try {
-            const { data } = await axios.get(`${API_URL}/feedback/${eventId}`);
-            setReviews(data.reviews);
+            const token = localStorage.getItem('token');
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+            const { data } = await axios.get(`${API_URL}/feedback/event/${eventId}`, config);
+            setReviews(data.comments);
             setAverage(data.average);
         } catch (err) {
             console.error("Error fetching feedback:", err);
@@ -32,7 +34,8 @@ const FeedbackForm = ({ eventId, registrationStatus, eventEndDate }) => {
         setError("");
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/feedback/${eventId}`, {
+            await axios.post(`${API_URL}/feedback`, {
+                eventId,
                 rating,
                 comment
             }, { headers: { Authorization: `Bearer ${token}` } });

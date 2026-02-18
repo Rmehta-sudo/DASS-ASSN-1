@@ -48,6 +48,47 @@ const FormRenderer = ({ formFields, onResponseChange, responses }) => {
                                 ))}
                             </select>
                         )}
+
+                        {field.type === 'checkbox' && (
+                            <div className="space-y-2 mt-2">
+                                {field.options && field.options.map((option, idx) => (
+                                    <div key={idx} className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            value={option}
+                                            checked={(responses[field.label] || []).includes(option)}
+                                            onChange={(e) => {
+                                                const current = responses[field.label] || [];
+                                                let updated;
+                                                if (e.target.checked) updated = [...current, option];
+                                                else updated = current.filter(item => item !== option);
+                                                onResponseChange(field.label, updated);
+                                            }}
+                                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                        />
+                                        <label className="ml-2 block text-sm text-gray-900">{option}</label>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {field.type === 'file' && (
+                            <input
+                                type="file"
+                                className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-indigo-50 file:text-indigo-700
+                                hover:file:bg-indigo-100"
+                                onChange={(e) => {
+                                    // For now just storing file name or file object
+                                    // In a real app, this would upload to server/S3 and get URL
+                                    onResponseChange(field.label, e.target.files[0]?.name || '');
+                                }}
+                                required={field.required}
+                            />
+                        )}
                     </div>
                 ))}
             </div>
