@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { API_URL } from '../../apiConfig';
 import QRScanner from '../../components/QRScanner';
 
@@ -12,6 +12,7 @@ const OrganizerDashboard = () => {
     const [loadingWaitlist, setLoadingWaitlist] = useState(false);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [activeTab, setActiveTab] = useState('Pending');
     const [feedbackModal, setFeedbackModal] = useState({ open: false, eventId: null, eventName: '', stats: null });
@@ -46,6 +47,23 @@ const OrganizerDashboard = () => {
             setLoading(false);
         }
     };
+
+    // Filter events based on query param
+    const getDisplayEvents = () => {
+        const params = new URLSearchParams(location.search);
+        const filter = params.get('filter');
+
+        if (filter === 'ongoing') {
+            const now = new Date();
+            return events.filter(e => {
+                const end = new Date(e.endDate || e.startDate); // Fallback if no end date
+                return e.status === 'Published' && end >= now;
+            });
+        }
+        return events;
+    };
+
+    const displayEvents = getDisplayEvents();
 
     const openWaitlist = async (eventId, eventName) => {
         setLoadingWaitlist(true);
@@ -236,13 +254,15 @@ const OrganizerDashboard = () => {
                     </Link>
                 </div>
 
-                {events.length === 0 ? (
+                {displayEvents.length === 0 ? (
                     <div className="bg-white p-10 rounded shadow text-center text-gray-500">
-                        You have not created any events yet.
+                        {new URLSearchParams(location.search).get('filter') === 'ongoing'
+                            ? "No ongoing events found."
+                            : "You have not created any events yet."}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {events.map(event => (
+                        {displayEvents.map(event => (
                             <div key={event._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
                                 <div className="p-5 border-b border-gray-100">
                                     <div className="flex justify-between items-start mb-2">

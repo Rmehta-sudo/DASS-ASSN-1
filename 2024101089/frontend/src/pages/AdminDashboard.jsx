@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../apiConfig';
 
 const AdminDashboard = () => {
@@ -11,6 +11,7 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Form State
     const [newClub, setNewClub] = useState({ name: '', category: 'Cultural', email: '', description: '' });
@@ -21,8 +22,16 @@ const AdminDashboard = () => {
             navigate('/dashboard'); // Redirect non-admins
             return;
         }
+
+        // Parse query param
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab && (tab === 'clubs' || tab === 'requests')) {
+            setActiveTab(tab);
+        }
+
         fetchClubs();
-    }, [user, navigate]);
+    }, [user, navigate, location.search]);
 
     const fetchClubs = async () => {
         try {
@@ -164,8 +173,8 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="mb-6 flex space-x-4 border-b">
-                    <button onClick={() => setActiveTab('clubs')} className={`pb-2 px-4 ${activeTab === 'clubs' ? 'border-b-2 border-indigo-600 font-bold text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Manage Clubs</button>
-                    <button onClick={() => setActiveTab('requests')} className={`pb-2 px-4 ${activeTab === 'requests' ? 'border-b-2 border-indigo-600 font-bold text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <button onClick={() => navigate('?tab=clubs')} className={`pb-2 px-4 ${activeTab === 'clubs' ? 'border-b-2 border-indigo-600 font-bold text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>Manage Clubs</button>
+                    <button onClick={() => navigate('?tab=requests')} className={`pb-2 px-4 ${activeTab === 'requests' ? 'border-b-2 border-indigo-600 font-bold text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}>
                         Password Requests ({requests.filter(r => r.status === 'Pending').length})
                     </button>
                 </div>

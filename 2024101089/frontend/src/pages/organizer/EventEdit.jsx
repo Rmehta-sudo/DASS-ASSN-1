@@ -101,6 +101,24 @@ const EventEdit = () => {
         }
     };
 
+    const isFieldDisabled = (fieldName) => {
+        if (eventData.status === 'Draft') return false; // All editable
+        if (['Ongoing', 'Completed', 'Cancelled'].includes(eventData.status)) {
+            return fieldName !== 'status'; // Only status is editable
+        }
+        if (eventData.status === 'Published') {
+            // Published allowed: description, deadline, registrationLimit, status
+            return !['description', 'deadline', 'registrationLimit', 'status'].includes(fieldName);
+        }
+        return false;
+    };
+
+    const handleCloseRegistrations = () => {
+        // Set deadline to now
+        const now = new Date().toISOString().slice(0, 16);
+        setEventData({ ...eventData, deadline: now });
+    };
+
     if (fetchLoading) {
         return <div className="p-10 text-center">Loading event...</div>;
     }
@@ -108,8 +126,18 @@ const EventEdit = () => {
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-                <div className="bg-indigo-600 px-6 py-4">
+                <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-white">Edit Event</h2>
+                    {eventData.status === 'Published' && (
+                        <button
+                            type="button"
+                            onClick={handleCloseRegistrations}
+                            className="bg-red-500 text-white text-sm px-3 py-1 rounded hover:bg-red-600"
+                            title="Examples: Set deadline to now to stop new registrations"
+                        >
+                            Close Registrations
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-6">
@@ -119,14 +147,14 @@ const EventEdit = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Event Name</label>
-                                <input type="text" name="name" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.name} onChange={handleChange} />
+                                <input type="text" name="name" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.name} onChange={handleChange} disabled={isFieldDisabled('name')} />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Status</label>
-                                <select name="status" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.status} onChange={handleChange}>
+                                <select name="status" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.status} onChange={handleChange} disabled={isFieldDisabled('status')}>
                                     <option value="Draft">Draft (Hidden)</option>
                                     <option value="Published">Published (Visible)</option>
                                     <option value="Ongoing">Ongoing</option>
@@ -137,8 +165,8 @@ const EventEdit = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Type</label>
-                                <select name="type" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.type} onChange={handleChange}>
+                                <select name="type" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.type} onChange={handleChange} disabled={isFieldDisabled('type')}>
                                     <option value="Normal">Normal Event (Workshop/Talk)</option>
                                     <option value="Merchandise">Merchandise Sale</option>
                                 </select>
@@ -146,8 +174,8 @@ const EventEdit = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Eligibility</label>
-                                <select name="eligibility" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.eligibility} onChange={handleChange}>
+                                <select name="eligibility" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.eligibility} onChange={handleChange} disabled={isFieldDisabled('eligibility')}>
                                     <option value="Anyone">Anyone</option>
                                     <option value="IIIT Only">IIIT Only</option>
                                 </select>
@@ -155,51 +183,51 @@ const EventEdit = () => {
 
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Description</label>
-                                <textarea name="description" rows="3" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.description} onChange={handleChange}></textarea>
+                                <textarea name="description" rows="3" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.description} onChange={handleChange} disabled={isFieldDisabled('description')}></textarea>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Registration Fee (₹)</label>
-                                <input type="number" name="registrationFee" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.registrationFee} onChange={handleChange} />
+                                <input type="number" name="registrationFee" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.registrationFee} onChange={handleChange} disabled={isFieldDisabled('registrationFee')} />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Max Participants</label>
-                                <input type="number" name="registrationLimit" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.registrationLimit} onChange={handleChange} />
+                                <input type="number" name="registrationLimit" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.registrationLimit} onChange={handleChange} disabled={isFieldDisabled('registrationLimit')} />
                             </div>
 
 
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                                <input type="datetime-local" name="startDate" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.startDate} onChange={handleChange} />
+                                <input type="datetime-local" name="startDate" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.startDate} onChange={handleChange} disabled={isFieldDisabled('startDate')} />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
-                                <input type="datetime-local" name="deadline" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.deadline} onChange={handleChange} />
+                                <input type="datetime-local" name="deadline" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.deadline} onChange={handleChange} disabled={isFieldDisabled('deadline')} />
                             </div>
 
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Location</label>
-                                <input type="text" name="location" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.location} onChange={handleChange} />
+                                <input type="text" name="location" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.location} onChange={handleChange} disabled={isFieldDisabled('location')} />
                             </div>
 
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Tags (comma separated)</label>
-                                <input type="text" name="tags" placeholder="tech, coding, fun" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.tags} onChange={handleChange} />
+                                <input type="text" name="tags" placeholder="tech, coding, fun" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.tags} onChange={handleChange} disabled={isFieldDisabled('tags')} />
                             </div>
                         </div>
 
                         {/* Merchandise Editor Section */}
-                        {eventData.type === 'Merchandise' && (
+                        {eventData.type === 'Merchandise' && !isFieldDisabled('merchandise') && (
                             <div className="mt-8 pt-6 border-t">
                                 <MerchandiseBuilder
                                     merchandise={eventData.merchandise}
@@ -207,14 +235,24 @@ const EventEdit = () => {
                                 />
                             </div>
                         )}
+                        {eventData.type === 'Merchandise' && isFieldDisabled('merchandise') && (
+                            <div className="mt-8 pt-6 border-t text-gray-500">
+                                Merchandise details cannot be edited after publishing.
+                            </div>
+                        )}
 
                         {/* Form Builder Section (Only for Normal Events) */}
-                        {eventData.type === 'Normal' && (
+                        {eventData.type === 'Normal' && !isFieldDisabled('formFields') && (
                             <div className="mt-8 pt-6 border-t">
                                 <FormBuilder
                                     formFields={eventData.formFields}
                                     setFormFields={handleFormFieldsChange}
                                 />
+                            </div>
+                        )}
+                        {eventData.type === 'Normal' && isFieldDisabled('formFields') && (
+                            <div className="mt-8 pt-6 border-t text-gray-500">
+                                Custom form fields cannot be edited after publishing.
                             </div>
                         )}
 

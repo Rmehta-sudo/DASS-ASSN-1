@@ -28,6 +28,8 @@ export const AuthProvider = ({ children }) => {
                 },
             };
 
+
+            console.log('Sending login request with:', { email, captchaToken: captchaToken ? 'PRESENT' : 'MISSING' });
             const { data } = await axios.post(`${API_URL}/auth/login`, { email, password, captchaToken }, config);
 
             console.log('Login success:', data);

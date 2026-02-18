@@ -176,7 +176,9 @@ const Profile = () => {
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
             <ToastContainer />
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
+                <h1 className="text-3xl font-bold text-gray-800">
+                    {user?.role === 'organizer' ? `Hello ${user?.name}` : 'My Profile'}
+                </h1>
                 {!editMode && (
                     <button
                         onClick={() => setEditMode(true)}
@@ -198,10 +200,12 @@ const Profile = () => {
                         <label className="block text-gray-600 mb-1">Role</label>
                         <input type="text" value={formData.role} disabled className="w-full border p-2 rounded bg-gray-100 uppercase" />
                     </div>
-                    <div>
-                        <label className="block text-gray-600 mb-1">Participant Type</label>
-                        <input type="text" value={formData.participantType} disabled className="w-full border p-2 rounded bg-gray-100" />
-                    </div>
+                    {user?.role !== 'admin' && user?.role !== 'organizer' && (
+                        <div>
+                            <label className="block text-gray-600 mb-1">Participant Type</label>
+                            <input type="text" value={formData.participantType} disabled className="w-full border p-2 rounded bg-gray-100" />
+                        </div>
+                    )}
 
                     {user?.role === 'organizer' && (
                         <div className="md:col-span-2 bg-indigo-50 p-4 rounded border border-indigo-100 mt-2">
@@ -251,113 +255,123 @@ const Profile = () => {
                             </div>
                         </div>
                     )}
-                    <div>
-                        <label className="block text-gray-600 mb-1">Participant Type</label>
-                        <input type="text" value={formData.participantType} disabled className="w-full border p-2 rounded bg-gray-100" />
-                    </div>
 
                     {/* Editable Fields */}
-                    <div>
-                        <label className="block text-gray-600 mb-1">First Name</label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            disabled={!editMode}
-                            className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-gray-600 mb-1">Last Name</label>
-                        <input
-                            type="text"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            disabled={!editMode}
-                            className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-gray-600 mb-1">Contact Number</label>
-                        <input
-                            type="text"
-                            name="contactNumber"
-                            value={formData.contactNumber}
-                            onChange={handleChange}
-                            disabled={!editMode}
-                            className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-gray-600 mb-1">College / Organization</label>
-                        <input
-                            type="text"
-                            name="collegeName"
-                            value={formData.collegeName}
-                            onChange={handleChange}
-                            disabled={!editMode}
-                            className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
-                        />
-                    </div>
+                    {user?.role !== 'admin' && ( // Admin doesn't need personal details usually, but keeping name is fine. Hiding contact/college if needed
+                        <>
+                            <div>
+                                <label className="block text-gray-600 mb-1">First Name</label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    disabled={!editMode}
+                                    className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-600 mb-1">Last Name</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    disabled={!editMode}
+                                    className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {user?.role !== 'admin' && (
+                        <div>
+                            <label className="block text-gray-600 mb-1">Contact Number</label>
+                            <input
+                                type="text"
+                                name="contactNumber"
+                                value={formData.contactNumber}
+                                onChange={handleChange}
+                                disabled={!editMode}
+                                className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                            />
+                        </div>
+                    )}
+
+                    {user?.role !== 'admin' && user?.role !== 'organizer' && (
+                        <div>
+                            <label className="block text-gray-600 mb-1">College / Organization</label>
+                            <input
+                                type="text"
+                                name="collegeName"
+                                value={formData.collegeName}
+                                onChange={handleChange}
+                                disabled={!editMode}
+                                className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <hr className="my-6 border-gray-200" />
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-3">Interests</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {availableInterests.map(interest => (
-                            <button
-                                type="button"
-                                key={interest}
-                                onClick={() => editMode && handleInterestChange(interest)}
-                                disabled={!editMode}
-                                className={`px-4 py-2 rounded-full border ${formData.interests.includes(interest)
-                                    ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
-                                    : 'bg-white text-gray-600 border-gray-300'
-                                    } ${editMode ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'}`}
-                            >
-                                {interest}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                {(user?.role !== 'admin' && user?.role !== 'organizer') && (
+                    <>
+                        <div className="mb-6">
+                            <h2 className="text-xl font-semibold mb-3">Interests</h2>
+                            <div className="flex flex-wrap gap-2">
+                                {availableInterests.map(interest => (
+                                    <button
+                                        type="button"
+                                        key={interest}
+                                        onClick={() => editMode && handleInterestChange(interest)}
+                                        disabled={!editMode}
+                                        className={`px-4 py-2 rounded-full border ${formData.interests.includes(interest)
+                                            ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                                            : 'bg-white text-gray-600 border-gray-300'
+                                            } ${editMode ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'}`}
+                                    >
+                                        {interest}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-3">Following Clubs</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                        {organizers.map(org => {
-                            const isFollowing = formData.following.some(id => (typeof id === 'object' ? id._id : id) === org._id);
-                            return (
-                                <div
-                                    key={org._id}
-                                    onClick={() => editMode && handleClubToggle(org._id)}
-                                    className={`p-4 rounded-lg border cursor-pointer transition-all flex justify-between items-start
-                                        ${isFollowing
-                                            ? 'bg-indigo-50 border-indigo-500 shadow-sm'
-                                            : 'bg-white border-gray-200 hover:border-indigo-300'
-                                        }
-                                        ${!editMode ? 'cursor-default' : ''}
-                                    `}
-                                >
-                                    <div>
-                                        <h3 className="font-medium text-gray-900">{org.name}</h3>
-                                        <p className="text-xs text-gray-500 mt-1">{org.category}</p>
-                                    </div>
-                                    {isFollowing && (
-                                        <span className="text-indigo-600">
-                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                        </span>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                        <div className="mb-6">
+                            <h2 className="text-xl font-semibold mb-3">Following Clubs</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                                {organizers.map(org => {
+                                    const isFollowing = formData.following.some(id => (typeof id === 'object' ? id._id : id) === org._id);
+                                    return (
+                                        <div
+                                            key={org._id}
+                                            onClick={() => editMode && handleClubToggle(org._id)}
+                                            className={`p-4 rounded-lg border cursor-pointer transition-all flex justify-between items-start
+                                                ${isFollowing
+                                                    ? 'bg-indigo-50 border-indigo-500 shadow-sm'
+                                                    : 'bg-white border-gray-200 hover:border-indigo-300'
+                                                }
+                                                ${!editMode ? 'cursor-default' : ''}
+                                            `}
+                                        >
+                                            <div>
+                                                <h3 className="font-medium text-gray-900">{org.name}</h3>
+                                                <p className="text-xs text-gray-500 mt-1">{org.category}</p>
+                                            </div>
+                                            {isFollowing && (
+                                                <span className="text-indigo-600">
+                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {editMode && (
                     <>
