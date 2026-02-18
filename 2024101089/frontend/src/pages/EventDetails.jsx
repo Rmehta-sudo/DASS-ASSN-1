@@ -70,25 +70,39 @@ const EventDetails = () => {
         }
     };
 
-    const handleMerchSelect = (item) => {
+    const handleMerchSelect = (item, defaultVariant = null) => {
         setSelectedMerchItems(prev => {
             const exists = prev.find(p => p.itemId === item._id);
             if (exists) {
-                // If already selected, remove it (toggle off)
-                return prev.filter(p => p.itemId !== item._id);
+                // Remove if already selected (via Add button logic used as toggle? No, logic changed)
+                // With new UI, "Add to Cart" only called when not selected.
+                return prev;
             } else {
-                // Add new item with qty 1
-                return [...prev, { itemId: item._id, quantity: 1, price: item.price }];
+                return [...prev, { itemId: item._id, quantity: 1, price: item.price, variant: defaultVariant }];
             }
         });
     };
 
-    const updateMerchQuantity = (itemId, change) => {
+    const updateMerchQuantity = (itemId, change, limit = null, stock = Infinity) => {
+        setSelectedMerchItems(prev => {
+            const updated = prev.map(p => {
+                if (p.itemId === itemId) {
+                    const newQty = p.quantity + change;
+                    if (newQty < 1) return null; // Remove if 0
+                    if (newQty > stock) return p;
+                    if (limit && newQty > limit) return p;
+                    return { ...p, quantity: newQty };
+                }
+                return p;
+            });
+            return updated.filter(Boolean); // Filter out nulls
+        });
+    };
+
+    const updateMerchVariant = (itemId, variant) => {
         setSelectedMerchItems(prev => prev.map(p => {
             if (p.itemId === itemId) {
-                const newQty = p.quantity + change;
-                if (newQty < 1) return p; // Don't go below 1, user should deselect to remove
-                return { ...p, quantity: newQty };
+                return { ...p, variant };
             }
             return p;
         }));
@@ -184,43 +198,83 @@ const EventDetails = () => {
                                     <h4 className="text-lg font-bold mb-4">Buy Merchandise</h4>
                                     <p className="text-sm text-gray-500 mb-4">Select items to purchase (click to select/deselect)</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {event.merchandise.map((item, idx) => {
-                                            const isSelected = selectedMerchItems.some(s => s.itemId === item._id);
+                                        {event.merchandise.map((item) => {
                                             const currentSelection = selectedMerchItems.find(s => s.itemId === item._id);
+                                            const isSelected = !!currentSelection;
                                             const quantity = currentSelection ? currentSelection.quantity : 0;
 
+                                            const hasVariants = item.variants && item.variants.length > 0 && item.variants[0].options && item.variants[0].options.length > 0;
+                                            const firstVariantOption = hasVariants ? item.variants[0].options[0] : null;
+
                                             return (
-                                                <div key={idx}
-                                                    className={`p-4 rounded-xl border-2 transition-all relative ${isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md' : 'border-gray-100 hover:border-gray-300 bg-white'
+                                                <div key={item._id}
+                                                    className={`p-4 rounded-xl border-2 transition-all relative flex flex-col justify-between ${isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md' : 'border-gray-100 hover:border-gray-300 bg-white'
                                                         }`}
                                                 >
-                                                    <div
-                                                        className="cursor-pointer"
-                                                        onClick={() => handleMerchSelect(item)}
-                                                    >
-                                                        <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <div className="flex justify-between items-start mb-1">
                                                             <div className="font-semibold text-gray-800">{item.name}</div>
                                                             {isSelected && <div className="text-indigo-600 font-bold">✓</div>}
                                                         </div>
-                                                        <div className="text-indigo-600 font-bold mt-1">₹{item.price}</div>
+                                                        <div className="text-indigo-600 font-bold">₹{item.price}</div>
                                                         <div className="text-xs text-gray-500 mt-1">{item.stock} left</div>
+                                                        {item.limitPerUser && <div className="text-xs text-orange-500">Max {item.limitPerUser} / person</div>}
+
+                                                        {hasVariants && (
+                                                            <div className="mt-3">
+                                                                <label className="text-xs font-semibold text-gray-600 block mb-1">{item.variants[0].type}:</label>
+                                                                <select
+                                                                    className="w-full text-sm border-gray-300 rounded p-1 bg-white"
+                                                                    value={currentSelection?.variant || firstVariantOption || ''}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value;
+                                                                        if (isSelected) {
+                                                                            updateMerchVariant(item._id, val);
+                                                                        }
+                                                                    }}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    disabled={!isSelected}
+                                                                >
+                                                                    {item.variants[0].options.map(opt => (
+                                                                        <option key={opt} value={opt}>{opt}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        )}
                                                     </div>
 
-                                                    {isSelected && (
-                                                        <div className="mt-3 flex items-center gap-2 border-t pt-2 border-indigo-200">
-                                                            <span className="text-xs font-semibold text-indigo-800">Qty:</span>
+                                                    <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
+                                                        {isSelected ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); updateMerchQuantity(item._id, -1, item.limitPerUser, item.stock); }}
+                                                                    className="w-8 h-8 flex items-center justify-center bg-white rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-100 font-bold active:bg-indigo-200 transition-colors"
+                                                                >-</button>
+                                                                <span className="text-sm font-bold w-6 text-center select-none">{quantity}</span>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); updateMerchQuantity(item._id, 1, item.limitPerUser, item.stock); }}
+                                                                    className="w-8 h-8 flex items-center justify-center bg-white rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-100 font-bold active:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:border-gray-200 disabled:text-gray-400"
+                                                                    disabled={quantity >= item.stock || (item.limitPerUser && quantity >= item.limitPerUser)}
+                                                                    title={item.limitPerUser && quantity >= item.limitPerUser ? `Limit ${item.limitPerUser} per person` : ''}
+                                                                >+</button>
+                                                            </div>
+                                                        ) : (
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); updateMerchQuantity(item._id, -1); }}
-                                                                className="w-6 h-6 flex items-center justify-center bg-white rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-100"
-                                                            >-</button>
-                                                            <span className="text-sm font-bold w-4 text-center">{quantity}</span>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); updateMerchQuantity(item._id, 1); }}
-                                                                className="w-6 h-6 flex items-center justify-center bg-white rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-100"
-                                                                disabled={quantity >= item.stock || (item.limitPerUser && quantity >= item.limitPerUser)}
-                                                            >+</button>
-                                                        </div>
-                                                    )}
+                                                                onClick={() => {
+                                                                    // Add with default variant if exists
+                                                                    const defaultVar = hasVariants ? item.variants[0].options[0] : null;
+                                                                    handleMerchSelect(item, defaultVar);
+                                                                }}
+                                                                className={`w-full py-2 rounded font-semibold text-sm transition-colors ${item.stock > 0
+                                                                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'
+                                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                    }`}
+                                                                disabled={item.stock <= 0}
+                                                            >
+                                                                {item.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             );
                                         })}

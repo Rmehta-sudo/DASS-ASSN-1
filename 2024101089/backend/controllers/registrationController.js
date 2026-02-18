@@ -121,7 +121,12 @@ const registerEvent = async (req, res) => {
 const getMyRegistrations = async (req, res) => {
     try {
         const registrations = await Registration.find({ user: req.user._id })
-            .populate('event', 'name type startDate registrationFee status');
+            .populate({
+                path: 'event',
+                select: 'name type startDate registrationFee status organizer',
+                populate: { path: 'organizer', select: 'name' }
+            })
+            .sort({ createdAt: -1 });
         res.json(registrations);
     } catch (error) {
         res.status(500).json({ message: error.message });

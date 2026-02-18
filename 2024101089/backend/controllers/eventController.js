@@ -131,8 +131,26 @@ const getMyEvents = async (req, res) => {
         if (!organizer) {
             return res.status(404).json({ message: 'Not an organizer' });
         }
-        const events = await Event.find({ organizer: organizer._id });
-        res.json(events);
+        const events = await Event.find({ organizer: organizer._id }).lean();
+
+        // Attach registration counts
+        const eventsWithCounts = await Promise.all(events.map(async (event) => {
+            const pendingCount = await Registration.countDocuments({ event: event._id, status: 'Pending' });
+            const confirmedCount = await Registration.countDocuments({ event: event._id, status: 'Confirmed' });
+            const rejectedCount = await Registration.countDocuments({ event: event._id, status: 'Rejected' });
+
+            return {
+                ...event,
+                stats: {
+                    pending: pendingCount,
+                    confirmed: confirmedCount,
+                    rejected: rejectedCount,
+                    total: pendingCount + confirmedCount + rejectedCount
+                }
+            };
+        }));
+
+        res.json(eventsWithCounts);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
