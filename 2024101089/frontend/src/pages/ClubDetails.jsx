@@ -113,8 +113,8 @@ const EventCard = ({ event }) => (
                     {event.type}
                 </span>
                 <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wide ml-2 ${event.status === 'Completed' ? 'bg-gray-200 text-gray-800' :
-                        event.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-green-50 text-green-800'
+                    event.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-green-50 text-green-800'
                     }`}>
                     {event.status}
                 </span>
@@ -139,3 +139,5 @@ const EventCard = ({ event }) => (
         </div>
     </div>
 );
+
+export default ClubDetails;
