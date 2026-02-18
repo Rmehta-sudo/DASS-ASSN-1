@@ -23,9 +23,11 @@ const Profile = () => {
         currentPassword: '',
         confirmPassword: '',
         // Organizer specific
+        organizerName: '',
         description: '',
         category: '',
-        discordWebhook: ''
+        discordWebhook: '',
+        contactEmail: ''
     });
 
     const [organizers, setOrganizers] = useState([]);
@@ -73,7 +75,9 @@ const Profile = () => {
                 confirmPassword: '',
                 description: data.organizerDetails?.description || '',
                 category: data.organizerDetails?.category || '',
-                discordWebhook: data.organizerDetails?.discordWebhook || ''
+                discordWebhook: data.organizerDetails?.discordWebhook || '',
+                contactEmail: data.organizerDetails?.contactEmail || '',
+                organizerName: data.organizerDetails?.name || ''
             });
             setLoading(false);
         } catch (error) {
@@ -124,6 +128,12 @@ const Profile = () => {
                 contactNumber: formData.contactNumber,
                 collegeName: formData.collegeName,
                 interests: formData.interests,
+                // Organizer specific
+                contactEmail: formData.contactEmail,
+                organizerName: formData.organizerName,
+                description: formData.description,
+                category: formData.category,
+                discordWebhook: formData.discordWebhook
             };
 
             if (formData.password) {
@@ -212,6 +222,29 @@ const Profile = () => {
                         <div className="md:col-span-2 bg-indigo-50 p-4 rounded border border-indigo-100 mt-2">
                             <h3 className="font-bold text-indigo-800 mb-3">Club / Organizer Settings</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-1">
+                                    <label className="block text-gray-600 mb-1">Club Name</label>
+                                    <input
+                                        type="text"
+                                        name="organizerName"
+                                        value={formData.organizerName}
+                                        onChange={handleChange}
+                                        disabled={!editMode}
+                                        className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                    />
+                                </div>
+                                <div className="md:col-span-1">
+                                    <label className="block text-gray-600 mb-1">Contact Email (Public)</label>
+                                    <input
+                                        type="email"
+                                        name="contactEmail"
+                                        value={formData.contactEmail}
+                                        onChange={handleChange}
+                                        disabled={!editMode}
+                                        className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                        placeholder="Different from login email"
+                                    />
+                                </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-gray-600 mb-1">About the Club (Description)</label>
                                     <textarea

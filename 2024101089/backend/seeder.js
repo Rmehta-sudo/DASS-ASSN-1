@@ -60,7 +60,8 @@ const seedData = async () => {
                 name: club.name,
                 category: club.category,
                 description: `Official ${club.name} of IIIT Hyderabad. Join us for amazing events!`,
-                contactEmail: club.email
+                contactEmail: club.email,
+                discordWebhook: process.env.DISCORD_WEBHOOK_URL
             });
             console.log(`Seeded: ${club.name}`);
         }

@@ -181,6 +181,8 @@ const updateUserProfile = async (req, res) => {
                 if (req.body.description !== undefined) organizerDetails.description = req.body.description;
                 if (req.body.category !== undefined) organizerDetails.category = req.body.category;
                 if (req.body.discordWebhook !== undefined) organizerDetails.discordWebhook = req.body.discordWebhook;
+                if (req.body.contactEmail !== undefined) organizerDetails.contactEmail = req.body.contactEmail;
+                if (req.body.organizerName !== undefined) organizerDetails.name = req.body.organizerName;
                 await organizerDetails.save();
             }
         }
@@ -201,7 +203,9 @@ const updateUserProfile = async (req, res) => {
             organizerDetails: organizerDetails ? {
                 description: organizerDetails.description,
                 category: organizerDetails.category,
-                discordWebhook: organizerDetails.discordWebhook
+                discordWebhook: organizerDetails.discordWebhook,
+                contactEmail: organizerDetails.contactEmail,
+                name: organizerDetails.name
             } : null
         });
 
@@ -237,7 +241,9 @@ const getUserProfile = async (req, res) => {
                     response.organizerDetails = {
                         description: organizer.description,
                         category: organizer.category,
-                        discordWebhook: organizer.discordWebhook
+                        discordWebhook: organizer.discordWebhook,
+                        contactEmail: organizer.contactEmail,
+                        name: organizer.name
                     };
                 }
             }
