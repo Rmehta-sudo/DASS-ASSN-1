@@ -17,6 +17,8 @@ import Profile from './pages/Profile';
 import Clubs from './pages/Clubs';
 import ClubDetails from './pages/ClubDetails';
 import Navbar from './components/Navbar';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // A simple PrivateRoute component to protect dashboard
 const PrivateRoute = ({ children }) => {
@@ -33,6 +35,8 @@ function App() {
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password/:token" element={<ResetPassword />} />
                         <Route path="/reset-request" element={<ResetRequest />} />
                         <Route path="/onboarding" element={
                             <PrivateRoute>

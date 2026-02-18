@@ -38,9 +38,9 @@ const Navbar = () => {
 
             {/* Profile / Logout */}
             <div className="flex items-center gap-4">
-                <span className="hidden sm:block text-sm text-gray-600">
+                <Link to="/profile" className="hidden sm:block text-sm text-gray-600 hover:text-indigo-800 transition-colors">
                     Hello, <span className="font-semibold text-gray-900">{user.name?.split(' ')[0]}</span>
-                </span>
+                </Link>
                 <button
                     onClick={handleLogout}
                     className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-transform hover:scale-105 active:scale-95 shadow-md"

@@ -5,7 +5,7 @@ import axios from 'axios';
 import { API_URL } from '../apiConfig';
 
 const Onboarding = () => {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const navigate = useNavigate();
     const [organizers, setOrganizers] = useState([]);
     const [selectedInterests, setSelectedInterests] = useState([]);
@@ -72,6 +72,8 @@ const Onboarding = () => {
             // Update local user info
             const updatedUser = { ...user, interests: selectedInterests, following: selectedClubs };
             localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
 
             navigate('/dashboard');
         } catch (error) {

@@ -43,8 +43,9 @@ const Login = () => {
                         <label className="block">Password</label>
                         <input type="password" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                             value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <div className="text-right mt-1">
-                            <Link to="/reset-request" className="text-sm text-indigo-600 hover:underline">Organizer? Forgot Password?</Link>
+                        <div className="flex justify-between mt-1">
+                            <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">Forgot Password?</Link>
+                            <Link to="/reset-request" className="text-sm text-gray-500 hover:underline">Organizer Issue?</Link>
                         </div>
                     </div>
                     <div className="flex items-baseline justify-between">
