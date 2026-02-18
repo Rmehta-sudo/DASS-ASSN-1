@@ -283,7 +283,7 @@ const resetDatabase = async (req, res) => {
         // 3. Seed Users (Variety)
         const userPool = [
             { firstName: 'Alice', lastName: 'Cultural', email: 'alice@test.com', type: 'IIIT', interests: ['Cultural', 'Music', 'Dance'], followingIndices: [0, 3, 5] },
-            { firstName: 'Bob', lastName: 'Techie', email: 'bob@test.com', type: 'Node', interests: ['Technical', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] },
+            { firstName: 'Bob', lastName: 'Techie', email: 'bob@test.com', type: 'Non-IIIT', interests: ['Technical', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] },
             { firstName: 'Charlie', lastName: 'Sportsfan', email: 'charlie@test.com', type: 'IIIT', interests: ['Sports', 'health'], followingIndices: [9, 2] },
             { firstName: 'David', lastName: 'General', email: 'david@test.com', type: 'Non-IIIT', interests: ['Technical', 'Art'], followingIndices: [8, 4] },
             { firstName: 'Eve', lastName: 'Collector', email: 'eve@test.com', type: 'IIIT', interests: ['Cultural', 'Technical'], followingIndices: [0, 1, 6] },
@@ -334,8 +334,8 @@ const resetDatabase = async (req, res) => {
                 status: 'Completed'
             });
 
-            // Event 2: CURRENT (Ongoing or Published soon) - 50% Merch
-            const isMerch2 = Math.random() > 0.5;
+            // Event 2: CURRENT (Ongoing or Published soon) - Mix Merch/Normal
+            const isMerch2 = Math.random() > 0.3; // 70% chance of Merch for variety
             // Starts yesterday, ends tomorrow (Ongoing)
             const currStart = new Date(today); currStart.setDate(today.getDate() - 1);
             const currEnd = new Date(today); currEnd.setDate(today.getDate() + 2);
@@ -364,7 +364,7 @@ const resetDatabase = async (req, res) => {
                 status: 'Ongoing'
             });
 
-            // Event 3: FUTURE (Published) - 50% Merch
+            // Event 3: FUTURE (Published) - Mix Merch/Normal
             const isMerch3 = Math.random() > 0.5;
             // 10 days from now
             const futStart = new Date(today); futStart.setDate(today.getDate() + 10);
