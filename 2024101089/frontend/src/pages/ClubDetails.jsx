@@ -54,7 +54,6 @@ const ClubDetails = () => {
                         <p className="flex items-center justify-end gap-2">
                             <span>📧</span> {club.contactEmail}
                         </p>
-                        <p className="text-sm mt-1">Managed by: {club.user?.name}</p>
                     </div>
                 </div>
                 <p className="mt-6 text-gray-700 text-lg leading-relaxed">
@@ -76,8 +75,8 @@ const ClubDetails = () => {
                             <div className="p-6 flex-grow">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wide ${event.type === 'Hackathon' ? 'bg-purple-100 text-purple-800' :
-                                            event.type === 'Merchandise' ? 'bg-green-100 text-green-800' :
-                                                'bg-blue-100 text-blue-800'
+                                        event.type === 'Merchandise' ? 'bg-green-100 text-green-800' :
+                                            'bg-blue-100 text-blue-800'
                                         }`}>
                                         {event.type}
                                     </span>

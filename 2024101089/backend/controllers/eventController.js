@@ -86,18 +86,18 @@ const getEvents = async (req, res) => {
             events = events.map(event => {
                 let score = 0;
 
-                // Score based on Following (+10)
+                // Score based on Following (Aggressive Boost)
                 if (event.organizer && userFollowing.includes(event.organizer._id.toString())) {
-                    score += 10;
+                    score += 1000;
                 }
 
-                // Score based on Interests (+5 per match)
+                // Score based on Interests (+50 per match)
                 if (event.tags && event.tags.length > 0) {
                     const hasInterest = event.tags.some(tag =>
                         userInterests.some(interest => tag.toLowerCase().includes(interest.toLowerCase()))
                     );
                     if (hasInterest) {
-                        score += 5;
+                        score += 50;
                     }
                 }
 

@@ -48,7 +48,9 @@ const BrowseEvents = () => {
 
     const fetchEvents = async () => {
         try {
-            const { data } = await axios.get(`${API_URL}/events`);
+            const token = localStorage.getItem('token');
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+            const { data } = await axios.get(`${API_URL}/events`, config);
             setEvents(data);
             setFilteredEvents(data);
             setLoading(false);
@@ -154,8 +156,9 @@ const BrowseEvents = () => {
                     {filteredEvents.map(event => (
                         <div key={event._id} className="glass rounded-2xl overflow-hidden card-hover flex flex-col h-full border border-gray-100">
                             {/* Placeholder Gradient Header instead of image for now */}
-                            <div className={`h-32 bg-gradient-to-r ${getGradient(event.type)} flex items-center justify-center`}>
-                                <span className="text-white font-bold text-2xl drop-shadow-md px-4 text-center">
+                            {/* Placeholder Gradient Header instead of image for now */}
+                            <div className={`h-20 bg-gradient-to-r ${getGradient(event.type)} flex items-center justify-center`}>
+                                <span className="text-white font-bold text-lg drop-shadow-md px-4 text-center">
                                     {event.organizer?.name || 'Club'}
                                 </span>
                             </div>
@@ -201,8 +204,8 @@ const BrowseEvents = () => {
 
 // Helper for cooler gradients based on event type
 const getGradient = (type) => {
-    if (type === 'Team') return 'from-purple-500 to-indigo-600';
-    return 'from-pink-500 to-orange-400';
+    if (type === 'Team') return 'from-slate-700 to-slate-900';
+    return 'from-gray-700 to-gray-900';
 };
 
 const computeStatus = (event) => {
