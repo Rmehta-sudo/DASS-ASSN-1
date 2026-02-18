@@ -275,16 +275,19 @@ const updateRegistrationStatus = async (req, res) => {
                 <p><strong>Ticket ID:</strong> ${registration.ticketId}</p>
                 <p>Please present this Ticket ID or the QR code available in your dashboard at the venue.</p>
             `;
-            try {
-                await sendEmail({
-                    email: user.email,
-                    subject: `Ticket Check - ${event.name}`,
-                    message: `You have registered for ${event.name}. Ticket ID: ${registration.ticketId}`,
-                    html: message
-                });
-            } catch (err) {
-                console.error("Email send failed", err);
-            }
+            // Send Confirmation Email (Non-blocking)
+            console.log(`[Background] Initiating email to ${user.email}...`);
+            sendEmail({
+                email: user.email,
+                subject: `Ticket Check - ${event.name}`,
+                message: `You have registered for ${event.name}. Ticket ID: ${registration.ticketId}`,
+                html: message
+            }).then(() => {
+                console.log(`[Background] Email successfully sent to ${user.email}`);
+            }).catch(err => {
+                console.error(`[Background] Email failed to ${user.email}: ${err.message}`);
+                // Optional: Could reschedule or notify admin
+            });
         }
 
         await registration.save();

@@ -14,7 +14,9 @@ const sendEmail = async (options) => {
         auth: {
             user: process.env.SMTP_EMAIL,
             pass: process.env.SMTP_PASSWORD
-        }
+        },
+        connectionTimeout: 12000, // 12 seconds to connect
+        socketTimeout: 12000 // 12 seconds for socket activity
     });
 
     const message = {

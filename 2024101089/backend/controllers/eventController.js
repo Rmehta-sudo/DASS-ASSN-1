@@ -232,9 +232,19 @@ const updateEvent = async (req, res) => {
 
         // Logic check: Can't edit core details if published? (Student logic: allow it but warn?)
         // Applying updates
+        const oldStatus = event.status;
         Object.assign(event, req.body);
 
         await event.save();
+
+        // Send Webhook if Published via Update
+        if (oldStatus !== 'Published' && event.status === 'Published') {
+            sendDiscordNotification(
+                `📢 New Event Published: **${event.name}** by ${organizer.name}! Check it out now.`,
+                organizer.discordWebhook
+            );
+        }
+
         res.json(event);
 
     } catch (error) {
