@@ -11,7 +11,7 @@ const authUser = async (req, res) => {
     // Student style debugging
     console.log("Login attempt for:", email);
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate('following', 'organizerName category');
 
     if (user && (await user.matchPassword(password))) {
 
@@ -138,6 +138,7 @@ const updateUserProfile = async (req, res) => {
         }
 
         const updatedUser = await user.save();
+        await updatedUser.populate('following', 'organizerName category');
 
         res.json({
             _id: updatedUser._id,
@@ -162,7 +163,7 @@ const updateUserProfile = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(req.user._id).populate('following', 'organizerName category');
 
         if (user) {
             res.json({

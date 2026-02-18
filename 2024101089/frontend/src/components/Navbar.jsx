@@ -38,8 +38,14 @@ const Navbar = () => {
 
             {/* Profile / Logout */}
             <div className="flex items-center gap-4">
-                <Link to="/profile" className="hidden sm:block text-sm text-gray-600 hover:text-indigo-800 transition-colors">
-                    Hello, <span className="font-semibold text-gray-900">{user.name?.split(' ')[0]}</span>
+                <Link to="/profile" className="hidden sm:flex items-center gap-2 group">
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        {user.name?.charAt(0)}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 group-hover:text-indigo-600">Welcome</span>
+                        <span className="text-sm font-semibold text-gray-900 group-hover:text-indigo-800">{user.name?.split(' ')[0]}</span>
+                    </div>
                 </Link>
                 <button
                     onClick={handleLogout}

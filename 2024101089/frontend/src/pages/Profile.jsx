@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../apiConfig';
@@ -251,24 +252,43 @@ const Profile = () => {
                 </div>
 
                 <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-3">Following</h2>
+                    <div className="flex justify-between items-center mb-3">
+                        <h2 className="text-xl font-semibold">Following</h2>
+                        <Link to="/clubs" className="text-indigo-600 hover:underline text-sm font-medium">
+                            Browse Clubs to Follow &rarr;
+                        </Link>
+                    </div>
                     {formData.following.length === 0 ? (
-                        <p className="text-gray-500 italic">You are not following any clubs yet.</p>
+                        <div className="text-center py-8 bg-gray-50 rounded border border-gray-100">
+                            <p className="text-gray-500 italic mb-2">You are not following any clubs yet.</p>
+                            <Link to="/clubs" className="inline-block bg-white text-indigo-600 border border-indigo-600 px-4 py-2 rounded hover:bg-indigo-50 transition">
+                                Browse Clubs
+                            </Link>
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             {formData.following.map(org => (
-                                <div key={org._id || org} className="border p-4 rounded shadow-sm flex justify-between items-center bg-white">
-                                    {/* Handle case where org might be just ID or populated object */}
-                                    <span className="font-medium text-gray-800">
-                                        {typeof org === 'object' ? org.organizerName : 'Club ID: ' + org}
-                                    </span>
+                                <div key={org._id || org} className="border p-4 rounded shadow-sm flex justify-between items-center bg-white transition hover:shadow-md">
+                                    <div>
+                                        <h4 className="font-semibold text-gray-800">
+                                            {typeof org === 'object' ? org.organizerName : 'Club ID: ' + org}
+                                        </h4>
+                                        {typeof org === 'object' && org.category && (
+                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded mt-1 inline-block">
+                                                {org.category}
+                                            </span>
+                                        )}
+                                    </div>
                                     {editMode && (
                                         <button
                                             type="button"
                                             onClick={() => handleUnfollow(org._id || org)}
-                                            className="text-red-500 text-sm hover:underline"
+                                            className="ml-2 text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full hover:bg-red-100 transition"
+                                            title="Unfollow"
                                         >
-                                            Unfollow
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                            </svg>
                                         </button>
                                     )}
                                 </div>

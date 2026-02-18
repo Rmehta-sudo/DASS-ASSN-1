@@ -99,6 +99,25 @@ const AdminDashboard = () => {
         navigate('/login');
     };
 
+    const handleResetDatabase = async () => {
+        if (!window.confirm("⚠️ DANGER: This will DELETE ALL DATA (Users, Events, Registrations) except your Admin account. \n\nIt will restore default clubs and create 'Rachit Mehta'. \n\nAre you sure?")) return;
+        if (!window.confirm("Double Check: This cannot be undone. Proceed?")) return;
+
+        try {
+            setLoading(true);
+            const config = {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            };
+            await axios.post(`${API_URL}/admin/reset-database`, {}, config);
+            alert("Database has been reset successfully!");
+            window.location.reload();
+        } catch (error) {
+            console.error("Reset failed", error);
+            alert("Reset Failed: " + (error.response?.data?.message || error.message));
+            setLoading(false);
+        }
+    };
+
     if (loading) return <div className="p-10 text-center">Loading Admin Panel...</div>;
 
     return (
@@ -110,6 +129,9 @@ const AdminDashboard = () => {
                         <h1 className="text-xl font-bold">Felicity Admin</h1>
                         <div className="flex items-center space-x-4">
                             <span>Welcome, Admin</span>
+                            <button onClick={handleResetDatabase} className="bg-orange-500 hover:bg-orange-600 px-3 py-1 rounded text-sm font-bold border border-orange-700 shadow-sm animate-pulse">
+                                ⚠ Reset DB
+                            </button>
                             <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
                         </div>
                     </div>

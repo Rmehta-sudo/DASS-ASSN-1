@@ -49,6 +49,9 @@ const createEvent = async (req, res) => {
 // @desc    Get all events (public)
 // @route   GET /api/events
 // @access  Public
+// @desc    Get all events (public, with optional personalization)
+// @route   GET /api/events
+// @access  Public (Optional Auth)
 const getEvents = async (req, res) => {
     try {
         let query = { status: { $ne: 'Draft' } };
@@ -71,9 +74,47 @@ const getEvents = async (req, res) => {
             query.type = req.query.type; // 'Normal' or 'Merchandise'
         }
 
-        const events = await Event.find(query)
+        let events = await Event.find(query)
             .populate('organizer', 'name category')
-            .sort({ startDate: 1 });
+            .lean(); // Convert to plain JS objects for modification
+
+        // Personalization Logic
+        if (req.user) {
+            const userInterests = req.user.interests || [];
+            const userFollowing = req.user.following.map(id => id.toString()) || [];
+
+            events = events.map(event => {
+                let score = 0;
+
+                // Score based on Following (+10)
+                if (event.organizer && userFollowing.includes(event.organizer._id.toString())) {
+                    score += 10;
+                }
+
+                // Score based on Interests (+5 per match)
+                if (event.tags && event.tags.length > 0) {
+                    const hasInterest = event.tags.some(tag =>
+                        userInterests.some(interest => tag.toLowerCase().includes(interest.toLowerCase()))
+                    );
+                    if (hasInterest) {
+                        score += 5;
+                    }
+                }
+
+                return { ...event, score };
+            });
+
+            // Sort: High Score first, then Soonest Start Date
+            events.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                return new Date(a.startDate) - new Date(b.startDate);
+            });
+        } else {
+            // Default Sort: Soonest Start Date
+            events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        }
 
         res.json(events);
     } catch (error) {

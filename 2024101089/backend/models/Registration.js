@@ -28,8 +28,9 @@ const registrationSchema = mongoose.Schema({
         type: String // URL to image
     },
     merchandiseSelection: [{
-        itemId: String,
-        quantity: Number
+        itemId: { type: String, required: true },
+        quantity: { type: Number, default: 1 },
+        variant: { type: String } // e.g. "Size: M", or just "M"
     }],
 
     // Team Logic (Tier A)

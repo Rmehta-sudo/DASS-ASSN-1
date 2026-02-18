@@ -12,7 +12,7 @@ const generateTicketId = () => {
 // @access  Private
 const registerEvent = async (req, res) => {
     try {
-        const { eventId, responses, teamName } = req.body;
+        const { eventId, responses, teamName, merchandiseSelection } = req.body;
 
         const event = await Event.findById(eventId);
         if (!event) {
@@ -35,17 +35,59 @@ const registerEvent = async (req, res) => {
             return res.status(403).json({ message: 'This event is restricted to IIIT students only' });
         }
 
-        // Determine status
+        // Determine status and Handle Merchandise
         let status = 'Confirmed';
-        if (event.type === 'Merchandise' || event.registrationFee > 0) {
-            status = 'Pending'; // Waiting for payment proof (Tier A implementation later)
+        let totalCost = 0;
+
+        // Merchandise Logic
+        if (event.type === 'Merchandise' || (merchandiseSelection && merchandiseSelection.length > 0)) {
+            // Validate Merchandise Selection
+            if (merchandiseSelection && merchandiseSelection.length > 0) {
+                for (const selection of merchandiseSelection) {
+                    const item = event.merchandise.id(selection.itemId);
+                    if (!item) {
+                        return res.status(404).json({ message: `Merchandise item not found: ${selection.itemId}` });
+                    }
+
+                    // Check Sort
+                    if (item.stock < selection.quantity) {
+                        return res.status(400).json({ message: `Insufficient stock for ${item.name}` });
+                    }
+
+                    // Check Limit
+                    if (item.limitPerUser && selection.quantity > item.limitPerUser) {
+                        return res.status(400).json({ message: `Limit of ${item.limitPerUser} per user for ${item.name}` });
+                    }
+
+                    // Check Variants
+                    if (item.variants && item.variants.length > 0) {
+                        if (!selection.variant) {
+                            return res.status(400).json({ message: `Variant selection required for ${item.name}` });
+                        }
+                        // Ideally validate if variant exists in options, but for now just ensure it's provided
+                    }
+
+                    // Deduct Stock
+                    item.stock -= selection.quantity;
+                    totalCost += item.price * selection.quantity;
+                }
+            } else if (event.type === 'Merchandise') {
+                return res.status(400).json({ message: 'Must select at least one item for Merchandise events' });
+            }
+
+            if (totalCost > 0) {
+                status = 'Pending'; // Waiting for payment
+            }
+        } else if (event.registrationFee > 0) {
+            status = 'Pending';
         }
 
         const regData = {
             user: req.user._id,
             event: eventId,
             status,
-            responses,
+            responses, // Form responses
+            merchandiseSelection,
             teamName
         };
 
@@ -55,11 +97,16 @@ const registerEvent = async (req, res) => {
 
         const registration = await Registration.create(regData);
 
-        // Update event count
-        if (status === 'Confirmed') {
+        // Update event count & stock
+        if (status === 'Confirmed' && event.type !== 'Merchandise') {
+            // For normal events, increment registration count
+            // (For merchandise events, we don't count "registrations" against a global limit usually, 
+            // but if there is a global limit, we should. Let's assume yes.)
             event.currentRegistrations = event.currentRegistrations + 1;
-            await event.save();
         }
+
+        // Save event (persists stock deduction)
+        await event.save();
 
         res.status(201).json(registration);
 

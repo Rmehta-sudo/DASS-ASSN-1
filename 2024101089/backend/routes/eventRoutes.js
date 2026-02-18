@@ -3,10 +3,10 @@ const router = express.Router();
 const {
     createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents, getEventAnalytics
 } = require('../controllers/eventController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, authorize, optionalProtect } = require('../middleware/authMiddleware');
 
 router.route('/')
-    .get(getEvents)
+    .get(optionalProtect, getEvents)
     .post(protect, createEvent);
 
 router.route('/my')

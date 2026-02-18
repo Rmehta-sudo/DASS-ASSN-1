@@ -74,9 +74,16 @@ const eventSchema = mongoose.Schema({
 
     // Merchandise Specifics
     merchandise: [{
-        name: String,
-        price: Number,
-        stock: Number
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        stock: { type: Number, required: true },
+        description: { type: String },
+        image: { type: String }, // URL
+        limitPerUser: { type: Number, default: 1 },
+        variants: [{
+            type: { type: String }, // e.g. "Size", "Color"
+            options: [{ type: String }] // e.g. ["S", "M", "L", "XL"]
+        }]
     }]
 }, {
     timestamps: true,
