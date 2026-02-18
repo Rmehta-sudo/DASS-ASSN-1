@@ -5,7 +5,7 @@ const Message = require('../models/Message');
 // @access  Private
 const getEventMessages = async (req, res) => {
     try {
-        const messages = await Message.find({ event: req.params.eventId, team: null }) // Ensure not team chat
+        const messages = await Message.find({ event: req.params.eventId })
             .populate('sender', 'firstName lastName')
             .sort({ createdAt: 1 }); // Oldest first
         res.json(messages);
@@ -14,18 +14,6 @@ const getEventMessages = async (req, res) => {
     }
 };
 
-// @desc    Get messages for a team
-// @route   GET /api/chat/team/:teamId
-// @access  Private
-const getTeamMessages = async (req, res) => {
-    try {
-        const messages = await Message.find({ team: req.params.teamId })
-            .populate('sender', 'firstName lastName')
-            .sort({ createdAt: 1 });
-        res.json(messages);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
-module.exports = { getEventMessages, getTeamMessages };
+
+module.exports = { getEventMessages };

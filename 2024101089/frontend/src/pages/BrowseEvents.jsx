@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../apiConfig';
+import { useAuth } from '../context/AuthContext';
 
 const BrowseEvents = () => {
     const [events, setEvents] = useState([]);
@@ -14,10 +15,18 @@ const BrowseEvents = () => {
     const [statusFilter, setStatusFilter] = useState('All');
 
     const [typeFilter, setTypeFilter] = useState('All');
+    const [eligibilityFilter, setEligibilityFilter] = useState('All');
+    const [dateFilter, setDateFilter] = useState('');
+    const [followedOnly, setFollowedOnly] = useState(false);
+
     const [showRecommended, setShowRecommended] = useState(false);
+    const [trendingEvents, setTrendingEvents] = useState([]);
+
+    const { user } = useAuth(); // Need user for 'Following' filter
 
     useEffect(() => {
         fetchEvents();
+        fetchTrending();
     }, []);
 
     useEffect(() => {
@@ -43,8 +52,21 @@ const BrowseEvents = () => {
             );
         }
 
+        if (eligibilityFilter !== 'All') {
+            result = result.filter(e => e.eligibility === eligibilityFilter);
+        }
+
+        if (dateFilter) {
+            const filterDate = new Date(dateFilter);
+            result = result.filter(e => new Date(e.startDate) >= filterDate);
+        }
+
+        if (followedOnly && user) {
+            result = result.filter(e => user.following.includes(e.organizer?._id));
+        }
+
         setFilteredEvents(result);
-    }, [events, statusFilter, typeFilter, searchTerm]);
+    }, [events, statusFilter, typeFilter, searchTerm, eligibilityFilter, dateFilter, followedOnly, user]);
 
     const fetchEvents = async () => {
         try {
@@ -78,6 +100,15 @@ const BrowseEvents = () => {
         }
     };
 
+    const fetchTrending = async () => {
+        try {
+            const { data } = await axios.get(`${API_URL}/events/trending`);
+            setTrendingEvents(data);
+        } catch (error) {
+            console.error("Error fetching trending events", error);
+        }
+    };
+
     const toggleRecommended = () => {
         if (!showRecommended) {
             setShowRecommended(true);
@@ -100,50 +131,111 @@ const BrowseEvents = () => {
                 </p>
             </div>
 
-            {/* Search & Filter - Glassmorphic Bar */}
-            <div className="glass p-4 rounded-2xl shadow-sm mb-10 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <input
-                    type="text"
-                    placeholder="Search events..."
-                    className="w-full md:w-1/3 px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 bg-white/50 backdrop-blur-sm transition-all"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            {/* Trending Section */}
+            {trendingEvents.length > 0 && (
+                <div className="mb-12">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span className="text-orange-500 font-bold">Trending</span> Now
+                    </h3>
+                    <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+                        {trendingEvents.map(event => (
+                            <div key={event._id} className="min-w-[280px] md:min-w-[320px] bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow border border-gray-100 flex-shrink-0">
+                                <div className={`h-16 bg-gradient-to-r ${getGradient(event.type)} flex items-center justify-center`}>
+                                    <span className="text-white font-bold text-sm drop-shadow">{event.type}</span>
+                                </div>
+                                <div className="p-4">
+                                    <h4 className="font-bold text-gray-900 mb-1 truncate">{event.name}</h4>
+                                    <p className="text-sm text-gray-500 mb-2 truncate">{event.description}</p>
+                                    <div className="flex justify-between items-center text-xs text-gray-600 mt-3">
+                                        <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                                            {event.registrationCount || 'Many'} joined
+                                        </span>
+                                        <Link to={`/events/${event._id}`} className="text-indigo-600 font-semibold hover:underline">View</Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
-                <div className="flex gap-4 w-full md:w-auto items-center">
+            {/* Search & Filter - Glassmorphic Bar */}
+            <div className="glass p-6 rounded-2xl shadow-sm mb-10 space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold">@</span>
+                        <input
+                            type="text"
+                            placeholder="Search events or organizers..."
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 bg-white/50 backdrop-blur-sm transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <button
                         onClick={toggleRecommended}
-                        className={`px-4 py-2 rounded-lg border transition-all ${showRecommended
+                        className={`px-5 py-2.5 rounded-xl border font-medium transition-all flex items-center gap-2 ${showRecommended
                             ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                            : 'bg-white/50 border-gray-200 text-gray-700 hover:border-indigo-300'
+                            : 'bg-white/50 border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-white'
                             }`}
                     >
-                        ✨ For You
+                        <span>All Events</span> For You
                     </button>
+                    {user && (
+                        <button
+                            onClick={() => setFollowedOnly(!followedOnly)}
+                            className={`px-5 py-2.5 rounded-xl border font-medium transition-all flex items-center gap-2 ${followedOnly
+                                ? 'bg-pink-600 text-white border-pink-600 shadow-md'
+                                : 'bg-white/50 border-gray-200 text-gray-700 hover:border-pink-300 hover:bg-white'
+                                }`}
+                        >
+                            <span>Following</span>
+                        </button>
+                    )}
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <select
-                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500"
+                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 focus:ring-2 focus:ring-indigo-500"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <option value="All">All Status</option>
                         <option value="Upcoming">Upcoming</option>
-                        <option value="Open">Open</option>
+                        <option value="Open">Open (Register Now)</option>
                         <option value="Ongoing">Ongoing</option>
                         <option value="Ended">Ended</option>
-                        <option value="Full">Full</option>
-                        <option value="Closed">Closed</option>
                     </select>
 
                     <select
-                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500"
+                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 focus:ring-2 focus:ring-indigo-500"
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
                     >
                         <option value="All">All Types</option>
-                        <option value="Normal">Normal</option>
-                        <option value="Team">Team</option>
+                        <option value="Normal">Normal Events</option>
+                        <option value="Team">Team Events</option>
+                        <option value="Merchandise">Merchandise</option>
                     </select>
+
+                    <select
+                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 focus:ring-2 focus:ring-indigo-500"
+                        value={eligibilityFilter}
+                        onChange={(e) => setEligibilityFilter(e.target.value)}
+                    >
+                        <option value="All">All Eligibility</option>
+                        <option value="Open to All">Open to All</option>
+                        <option value="IIIT Only">IIIT Only</option>
+                    </select>
+
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
 

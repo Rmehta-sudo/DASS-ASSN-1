@@ -11,7 +11,7 @@ const testFiltering = async () => {
         // 1. Setup Organizer & Events
         const orgLogin = await axios.post(`${API_URL}/auth/login`, {
             email: 'music@clubs.iiit.ac.in',
-            password: 'password123'
+            password: 'thisisclub'
         });
         organizerToken = orgLogin.data.token;
 

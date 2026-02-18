@@ -28,19 +28,13 @@ const registrationSchema = mongoose.Schema({
         type: String // URL to image
     },
     merchandiseSelection: [{
-        itemId: { type: String, required: true },
+        itemId: { type: String },
         quantity: { type: Number, default: 1 },
-        variant: { type: String } // e.g. "Size: M", or just "M"
+        variant: { type: Object },
+        price: { type: Number }
     }],
 
-    // Team Logic (Tier A)
-    teamName: {
-        type: String
-    },
-    team: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Team'
-    },
+
 
     // Ticket ID
     ticketId: {

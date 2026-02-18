@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import FormBuilder from '../../components/FormBuilder';
+import MerchandiseBuilder from '../../components/MerchandiseBuilder';
 import { API_URL } from '../../apiConfig';
 
 const EventCreate = () => {
@@ -108,18 +109,7 @@ const EventCreate = () => {
                                     value={eventData.registrationLimit} onChange={handleChange} />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Team Size (Min)</label>
-                                <input type="number" name="teamSizeMin" min="1" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.teamSizeMin || 1} onChange={handleChange} />
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Team Size (Max)</label>
-                                <input type="number" name="teamSizeMax" min="1" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.teamSizeMax || 1} onChange={handleChange} />
-                                <p className="text-xs text-gray-500">Set &gt; 1 for Team Events</p>
-                            </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Start Date</label>
@@ -146,6 +136,16 @@ const EventCreate = () => {
                                 <FormBuilder
                                     formFields={eventData.formFields}
                                     setFormFields={handleFormFieldsChange}
+                                />
+                            </div>
+                        )}
+
+                        {/* Merchandise Builder Section */}
+                        {eventData.type === 'Merchandise' && (
+                            <div className="mt-8 pt-6 border-t">
+                                <MerchandiseBuilder
+                                    merchandise={eventData.merchandise}
+                                    setMerchandise={(newMerch) => setEventData({ ...eventData, merchandise: newMerch })}
                                 />
                             </div>
                         )}

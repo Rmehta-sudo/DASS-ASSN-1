@@ -11,10 +11,7 @@ const messageSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Event'
     },
-    team: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Team'
-    },
+
     content: {
         type: String,
         required: true

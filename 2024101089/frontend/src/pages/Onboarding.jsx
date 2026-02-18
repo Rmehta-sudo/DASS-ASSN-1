@@ -101,14 +101,14 @@ const Onboarding = () => {
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Felicity! 🎉</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Felicity!</h1>
                         <p className="text-gray-600">Let's personalize your experience (you can skip this and set preferences later)</p>
                     </div>
 
                     {/* Interests Section */}
                     <div className="mb-10">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                            <span className="mr-2">🎯</span> Areas of Interest
+                            Areas of Interest
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {interestOptions.map(interest => (
@@ -130,7 +130,7 @@ const Onboarding = () => {
                     {/* Clubs/Organizers Section */}
                     <div className="mb-10">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                            <span className="mr-2">🏛️</span> Follow Clubs & Organizers
+                            Follow Clubs & Organizers
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
                             {organizers.map(org => (
@@ -178,7 +178,7 @@ const Onboarding = () => {
                             onClick={handleSubmit}
                             className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all"
                         >
-                            Continue to Dashboard →
+                            Continue to Dashboard -&gt;
                         </button>
                     </div>
 
@@ -186,7 +186,7 @@ const Onboarding = () => {
                     {(selectedInterests.length > 0 || selectedClubs.length > 0) && (
                         <div className="mt-6 p-4 bg-indigo-50 rounded-lg">
                             <p className="text-sm text-indigo-800">
-                                ✨ You've selected <strong>{selectedInterests.length}</strong> interest(s) and
+                                You've selected <strong>{selectedInterests.length}</strong> interest(s) and
                                 following <strong>{selectedClubs.length}</strong> club(s)
                             </p>
                         </div>

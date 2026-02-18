@@ -3,7 +3,7 @@ const router = express.Router();
 const {
     getClubs, deleteClub, addClub,
     requestPasswordReset, getResetRequests, processResetRequest,
-    getClubById, updateClubProfile, resetDatabase
+    getClubById, updateClubProfile, resetDatabase, toggleArchiveStatus
 } = require('../controllers/adminController');
 const { protect, admin, authorize } = require('../middleware/authMiddleware');
 
@@ -30,5 +30,8 @@ router.route('/reset-request/:id')
 
 router.route('/reset-database')
     .post(protect, admin, resetDatabase);
+
+router.route('/clubs/:id/archive')
+    .put(protect, admin, toggleArchiveStatus);
 
 module.exports = router;

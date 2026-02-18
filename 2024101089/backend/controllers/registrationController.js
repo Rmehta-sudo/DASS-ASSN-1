@@ -1,6 +1,8 @@
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+const User = require('../models/User'); // Import User for email
 
 // Helper to generate Ticket ID
 const generateTicketId = () => {
@@ -12,7 +14,7 @@ const generateTicketId = () => {
 // @access  Private
 const registerEvent = async (req, res) => {
     try {
-        const { eventId, responses, teamName, merchandiseSelection } = req.body;
+        const { eventId, responses, merchandiseSelection } = req.body;
 
         const event = await Event.findById(eventId);
         if (!event) {
@@ -61,10 +63,20 @@ const registerEvent = async (req, res) => {
 
                     // Check Variants
                     if (item.variants && item.variants.length > 0) {
-                        if (!selection.variant) {
+                        if (!selection.variant || typeof selection.variant !== 'object') {
                             return res.status(400).json({ message: `Variant selection required for ${item.name}` });
                         }
-                        // Ideally validate if variant exists in options, but for now just ensure it's provided
+
+                        // Check if all required variant types are selected
+                        for (const vDef of item.variants) {
+                            const selectedOption = selection.variant[vDef.type];
+                            if (!selectedOption) {
+                                return res.status(400).json({ message: `Please select a ${vDef.type} for ${item.name}` });
+                            }
+                            if (vDef.options && !vDef.options.includes(selectedOption)) {
+                                return res.status(400).json({ message: `Invalid option '${selectedOption}' for ${vDef.type} in ${item.name}` });
+                            }
+                        }
                     }
 
                     // Deduct Stock
@@ -88,7 +100,7 @@ const registerEvent = async (req, res) => {
             status,
             responses, // Form responses
             merchandiseSelection,
-            teamName
+
         };
 
         if (status === 'Confirmed') {
@@ -107,6 +119,47 @@ const registerEvent = async (req, res) => {
 
         // Save event (persists stock deduction)
         await event.save();
+
+        // Send Email Confirmation
+        if (status === 'Confirmed') {
+            const user = await User.findById(req.user._id);
+            const message = `
+                <h1>Registration Confirmed!</h1>
+                <p>Hello ${user.name},</p>
+                <p>You have successfully registered for <strong>${event.name}</strong>.</p>
+                <p><strong>Ticket ID:</strong> ${registration.ticketId}</p>
+                <p>Please present this Ticket ID or the QR code available in your dashboard at the venue.</p>
+            `;
+            try {
+                await sendEmail({
+                    email: user.email,
+                    subject: `Ticket Confirmed - ${event.name}`,
+                    message: `You have registered for ${event.name}. Ticket ID: ${registration.ticketId}`,
+                    html: message
+                });
+            } catch (err) {
+                console.error("Email send failed", err);
+            }
+        } else if (status === 'Pending' && totalCost > 0) {
+            const user = await User.findById(req.user._id);
+            const message = `
+                <h1>Payment Required</h1>
+                <p>Hello ${user.name},</p>
+                <p>Your order for <strong>${event.name}</strong> is pending payment.</p>
+                <p><strong>Total Amount:</strong> ₹${totalCost}</p>
+                <p>Please upload payment proof in your dashboard to confirm your order.</p>
+            `;
+            try {
+                await sendEmail({
+                    email: user.email,
+                    subject: `Payment Required - ${event.name}`,
+                    message: `Please complete payment for ${event.name}. Amount: ₹${totalCost}`,
+                    html: message
+                });
+            } catch (err) {
+                console.error("Email send failed", err);
+            }
+        }
 
         res.status(201).json(registration);
 

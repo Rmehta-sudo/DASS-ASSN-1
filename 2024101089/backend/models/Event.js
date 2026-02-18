@@ -43,14 +43,7 @@ const eventSchema = mongoose.Schema({
         type: Number,
         default: 0 // 0 means unlimited
     },
-    teamSizeMin: {
-        type: Number,
-        default: 1
-    },
-    teamSizeMax: {
-        type: Number,
-        default: 1
-    },
+
     currentRegistrations: {
         type: Number,
         default: 0

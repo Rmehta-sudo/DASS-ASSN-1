@@ -52,7 +52,7 @@ const ClubDetails = () => {
                     </div>
                     <div className="text-right text-gray-600">
                         <p className="flex items-center justify-end gap-2">
-                            <span>📧</span> {club.contactEmail}
+                            <span>Email: </span> {club.contactEmail}
                         </p>
                     </div>
                 </div>
@@ -66,7 +66,7 @@ const ClubDetails = () => {
                 {/* Upcoming Events */}
                 <section>
                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        📅 <span className="underline decoration-indigo-500 decoration-4 underline-offset-4">Upcoming Events</span>
+                        <span className="underline decoration-indigo-500 decoration-4 underline-offset-4">Upcoming Events</span>
                     </h2>
 
                     {events.filter(e => new Date(e.startDate) >= new Date()).length === 0 ? (
@@ -83,7 +83,7 @@ const ClubDetails = () => {
                 {/* Past Events */}
                 <section>
                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        🕰️ <span className="underline decoration-gray-400 decoration-4 underline-offset-4">Past Events</span>
+                        <span className="underline decoration-gray-400 decoration-4 underline-offset-4">Past Events</span>
                     </h2>
 
                     {events.filter(e => new Date(e.startDate) < new Date()).length === 0 ? (
@@ -123,8 +123,8 @@ const EventCard = ({ event }) => (
             <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{event.name}</h3>
 
             <div className="text-sm text-gray-600 space-y-1 mb-4">
-                <p>🗓 {new Date(event.startDate).toLocaleDateString()} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                <p>📍 {event.location}</p>
+                <p>Date: {new Date(event.startDate).toLocaleDateString()} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>Location: {event.location}</p>
             </div>
 
             <p className="text-gray-600 text-sm line-clamp-3 mb-4">

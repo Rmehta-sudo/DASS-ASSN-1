@@ -201,6 +201,30 @@ const updateClubProfile = async (req, res) => {
     }
 };
 
+
+// @desc    Archive/Unarchive a Club
+// @route   PUT /api/admin/clubs/:id/archive
+// @access  Private/Admin
+const toggleArchiveStatus = async (req, res) => {
+    try {
+        const club = await Organizer.findById(req.params.id);
+        if (club) {
+            club.isArchived = !club.isArchived;
+            const updatedClub = await club.save();
+            res.json({
+                _id: updatedClub._id,
+                name: updatedClub.name,
+                isArchived: updatedClub.isArchived,
+                message: `Club ${updatedClub.isArchived ? 'Archived' : 'Unarchived'}`
+            });
+        } else {
+            res.status(404).json({ message: 'Club not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Reset Database (Keep Admin, Restore Clubs, Create Rachit)
 // @route   POST /api/admin/reset-database
 // @access  Private/Admin
@@ -330,5 +354,7 @@ module.exports = {
     processResetRequest,
     getClubById,
     updateClubProfile,
-    resetDatabase
+    updateClubProfile,
+    resetDatabase,
+    toggleArchiveStatus
 };

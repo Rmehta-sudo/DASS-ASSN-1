@@ -20,7 +20,12 @@ const Profile = () => {
         interests: [],
         following: [],
         password: '',
-        confirmPassword: ''
+
+        confirmPassword: '',
+        // Organizer specific
+        description: '',
+        category: '',
+        discordWebhook: ''
     });
 
     const [organizers, setOrganizers] = useState([]);
@@ -63,7 +68,12 @@ const Profile = () => {
                 interests: data.interests || [],
                 following: data.following || [],
                 password: '',
-                confirmPassword: ''
+                following: data.following || [],
+                password: '',
+                confirmPassword: '',
+                description: data.organizerDetails?.description || '',
+                category: data.organizerDetails?.category || '',
+                discordWebhook: data.organizerDetails?.discordWebhook || ''
             });
             setLoading(false);
         } catch (error) {
@@ -89,6 +99,11 @@ const Profile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.password && formData.password.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+
         if (formData.password && formData.password !== formData.confirmPassword) {
             toast.error("Passwords do not match");
             return;
@@ -183,6 +198,59 @@ const Profile = () => {
                         <label className="block text-gray-600 mb-1">Role</label>
                         <input type="text" value={formData.role} disabled className="w-full border p-2 rounded bg-gray-100 uppercase" />
                     </div>
+                    <div>
+                        <label className="block text-gray-600 mb-1">Participant Type</label>
+                        <input type="text" value={formData.participantType} disabled className="w-full border p-2 rounded bg-gray-100" />
+                    </div>
+
+                    {user?.role === 'organizer' && (
+                        <div className="md:col-span-2 bg-indigo-50 p-4 rounded border border-indigo-100 mt-2">
+                            <h3 className="font-bold text-indigo-800 mb-3">Club / Organizer Settings</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-gray-600 mb-1">About the Club (Description)</label>
+                                    <textarea
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        disabled={!editMode}
+                                        rows="3"
+                                        className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                        placeholder="Describe your club..."
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-gray-600 mb-1">Category</label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        disabled={!editMode}
+                                        className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Cultural">Cultural</option>
+                                        <option value="Technical">Technical</option>
+                                        <option value="Sports">Sports</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-gray-600 mb-1">Discord Webhook URL</label>
+                                    <input
+                                        type="text"
+                                        name="discordWebhook"
+                                        value={formData.discordWebhook}
+                                        onChange={handleChange}
+                                        disabled={!editMode}
+                                        placeholder="https://discord.com/api/webhooks/..."
+                                        className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Leave blank to use system default</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-gray-600 mb-1">Participant Type</label>
                         <input type="text" value={formData.participantType} disabled className="w-full border p-2 rounded bg-gray-100" />

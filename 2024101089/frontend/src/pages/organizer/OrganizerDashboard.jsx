@@ -150,7 +150,9 @@ const OrganizerDashboard = () => {
                             <div key={event._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
                                 <div className="p-5 border-b border-gray-100">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-lg text-indigo-600 line-clamp-1" title={event.name}>{event.name}</h3>
+                                        <Link to={`/organizer/events/${event._id}`} className="hover:underline">
+                                            <h3 className="font-bold text-lg text-indigo-600 line-clamp-1" title={event.name}>{event.name}</h3>
+                                        </Link>
                                         <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${event.status === 'Published' ? 'bg-green-100 text-green-700' :
                                             event.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
                                             }`}>{event.status}</span>
@@ -241,7 +243,7 @@ const OrganizerDashboard = () => {
                                 <div className="text-center py-10 text-gray-500">Loading registrations...</div>
                             ) : getFilteredRegistrations().length === 0 ? (
                                 <div className="text-center py-16 text-gray-400 flex flex-col items-center">
-                                    <span className="text-4xl mb-2">📭</span>
+                                    <span className="text-4xl mb-2 font-bold text-gray-300">No Events</span>
                                     <span>No {activeTab.toLowerCase()} registrations found.</span>
                                 </div>
                             ) : (
@@ -253,11 +255,7 @@ const OrganizerDashboard = () => {
                                                     <h4 className="font-bold text-gray-900 text-lg">
                                                         {reg.user?.firstName} {reg.user?.lastName}
                                                     </h4>
-                                                    {reg.teamName && (
-                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded border border-blue-100 font-medium">
-                                                            Team: {reg.teamName}
-                                                        </span>
-                                                    )}
+
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm text-gray-600">
@@ -285,7 +283,7 @@ const OrganizerDashboard = () => {
                                                         <a href={reg.paymentProof.startsWith('http') ? reg.paymentProof : `https://${reg.paymentProof}`} target="_blank" rel="noopener noreferrer"
                                                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium transition-colors"
                                                         >
-                                                            <span>📎 View Payment Proof</span>
+                                                            <span>View Payment Proof</span>
                                                         </a>
                                                     </div>
                                                 )}
@@ -355,7 +353,7 @@ const OrganizerDashboard = () => {
                                             <span className="text-5xl font-bold text-gray-800">{feedbackModal.stats.averageRating}</span>
                                             <div className="flex text-yellow-400 text-xl my-2">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <span key={i}>{i < Math.round(Number(feedbackModal.stats.averageRating)) ? '★' : '☆'}</span>
+                                                    <span key={i}>{i < Math.round(Number(feedbackModal.stats.averageRating)) ? '*' : '-'}</span>
                                                 ))}
                                             </div>
                                             <span className="text-sm text-gray-500">{feedbackModal.stats.comments.length} Reviews</span>
@@ -369,7 +367,7 @@ const OrganizerDashboard = () => {
                                                 return (
                                                     <div key={star} className="flex items-center text-sm gap-2">
                                                         <span className="w-3">{star}</span>
-                                                        <span className="text-yellow-400">★</span>
+                                                        <span className="text-yellow-400">Rating: {comment.rating}/5</span>
                                                         <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                                                             <div className="h-full bg-yellow-400" style={{ width: `${percent}%` }}></div>
                                                         </div>
@@ -404,7 +402,7 @@ const OrganizerDashboard = () => {
                                                     <div key={idx} className="bg-white p-4 rounded border border-gray-200 shadow-sm">
                                                         <div className="flex justify-between mb-2">
                                                             <div className="flex text-yellow-500 text-sm">
-                                                                {[...Array(comment.rating)].map((_, i) => <span key={i}>★</span>)}
+                                                                Rating: {comment.rating}/5
                                                             </div>
                                                             <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
                                                         </div>

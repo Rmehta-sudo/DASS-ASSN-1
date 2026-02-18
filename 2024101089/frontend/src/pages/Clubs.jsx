@@ -41,7 +41,7 @@ const Clubs = () => {
                                     </h2>
                                     <p className="text-sm text-gray-500">{club.category}</p>
                                 </div>
-                                <span className="text-2xl opacity-50">🏢</span>
+                                <span className="text-2xl opacity-50 font-bold text-gray-300">Club</span>
                             </div>
 
                             <p className="text-gray-600 line-clamp-3 mb-4 text-sm">
@@ -49,7 +49,7 @@ const Clubs = () => {
                             </p>
 
                             <div className="flex items-center text-sm text-gray-500 mt-auto">
-                                <span className="mr-2">📧</span> {club.contactEmail}
+                                <span className="mr-2 font-semibold">Email:</span> {club.contactEmail}
                             </div>
                         </div>
                     </Link>

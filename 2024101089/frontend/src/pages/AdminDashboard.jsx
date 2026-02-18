@@ -79,6 +79,20 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleArchive = async (id, currentStatus) => {
+        if (!window.confirm(`Are you sure you want to ${currentStatus ? 'Unarchive' : 'Archive'} this club?`)) return;
+        try {
+            const config = {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            };
+            const { data } = await axios.put(`${API_URL}/admin/clubs/${id}/archive`, {}, config);
+            alert(data.message);
+            fetchClubs();
+        } catch (error) {
+            alert(error.response?.data?.message || "Action failed");
+        }
+    };
+
     const handleAddClub = async (e) => {
         e.preventDefault();
         try {
@@ -100,7 +114,7 @@ const AdminDashboard = () => {
     };
 
     const handleResetDatabase = async () => {
-        if (!window.confirm("⚠️ DANGER: This will DELETE ALL DATA (Users, Events, Registrations) except your Admin account. \n\nIt will restore default clubs and create 'Rachit Mehta'. \n\nAre you sure?")) return;
+        if (!window.confirm("DANGER: This will DELETE ALL DATA (Users, Events, Registrations) except your Admin account. \n\nIt will restore default clubs and create 'Rachit Mehta'. \n\nAre you sure?")) return;
         if (!window.confirm("Double Check: This cannot be undone. Proceed?")) return;
 
         try {
@@ -130,7 +144,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center space-x-4">
                             <span>Welcome, Admin</span>
                             <button onClick={handleResetDatabase} className="bg-orange-500 hover:bg-orange-600 px-3 py-1 rounded text-sm font-bold border border-orange-700 shadow-sm">
-                                ⚠ Reset DB
+                                Reset DB
                             </button>
                             <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
                         </div>
@@ -205,6 +219,7 @@ const AdminDashboard = () => {
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                             </tr>
                                         </thead>
@@ -220,7 +235,16 @@ const AdminDashboard = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{club.contactEmail}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${club.isArchived ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}`}>
+                                                            {club.isArchived ? 'Archived' : 'Active'}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button onClick={() => handleArchive(club._id, club.isArchived)}
+                                                            className={`${club.isArchived ? 'text-green-600 hover:text-green-900' : 'text-yellow-600 hover:text-yellow-900'} ml-4`}>
+                                                            {club.isArchived ? 'Unarchive' : 'Archive'}
+                                                        </button>
                                                         <button onClick={() => handleDelete(club._id)} className="text-red-600 hover:text-red-900 ml-4">Delete</button>
                                                     </td>
                                                 </tr>

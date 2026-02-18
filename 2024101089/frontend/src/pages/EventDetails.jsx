@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FormRenderer from '../components/FormRenderer';
-import EventTeam from '../components/EventTeam';
+
 import DiscussionForum from '../components/DiscussionForum';
 import FeedbackForm from '../components/FeedbackForm';
 import { API_URL } from '../apiConfig';
@@ -14,7 +14,7 @@ const RegistrationDetails = ({ reg }) => (
         <div className="grid grid-cols-2 gap-2 text-sm">
             <div><span className="font-semibold">Status:</span> {reg.status}</div>
             <div><span className="font-semibold">Role:</span> {reg.role}</div>
-            {reg.teamId && <div><span className="font-semibold">Team:</span> {reg.teamId}</div>}
+
         </div>
     </div>
 );
@@ -70,15 +70,22 @@ const EventDetails = () => {
         }
     };
 
-    const handleMerchSelect = (item, defaultVariant = null) => {
+    const handleMerchSelect = (item) => {
         setSelectedMerchItems(prev => {
             const exists = prev.find(p => p.itemId === item._id);
             if (exists) {
-                // Remove if already selected (via Add button logic used as toggle? No, logic changed)
-                // With new UI, "Add to Cart" only called when not selected.
                 return prev;
             } else {
-                return [...prev, { itemId: item._id, quantity: 1, price: item.price, variant: defaultVariant }];
+                // Initialize default variants if possible
+                const initialVariants = {};
+                if (item.variants) {
+                    item.variants.forEach(v => {
+                        if (v.options && v.options.length > 0) {
+                            initialVariants[v.type] = v.options[0];
+                        }
+                    });
+                }
+                return [...prev, { itemId: item._id, quantity: 1, price: item.price, variant: initialVariants }];
             }
         });
     };
@@ -99,10 +106,10 @@ const EventDetails = () => {
         });
     };
 
-    const updateMerchVariant = (itemId, variant) => {
+    const updateMerchVariant = (itemId, type, value) => {
         setSelectedMerchItems(prev => prev.map(p => {
             if (p.itemId === itemId) {
-                return { ...p, variant };
+                return { ...p, variant: { ...p.variant, [type]: value } };
             }
             return p;
         }));
@@ -203,9 +210,6 @@ const EventDetails = () => {
                                             const isSelected = !!currentSelection;
                                             const quantity = currentSelection ? currentSelection.quantity : 0;
 
-                                            const hasVariants = item.variants && item.variants.length > 0 && item.variants[0].options && item.variants[0].options.length > 0;
-                                            const firstVariantOption = hasVariants ? item.variants[0].options[0] : null;
-
                                             return (
                                                 <div key={item._id}
                                                     className={`p-4 rounded-xl border-2 transition-all relative flex flex-col justify-between ${isSelected ? 'border-indigo-500 bg-indigo-50 shadow-md' : 'border-gray-100 hover:border-gray-300 bg-white'
@@ -214,33 +218,32 @@ const EventDetails = () => {
                                                     <div>
                                                         <div className="flex justify-between items-start mb-1">
                                                             <div className="font-semibold text-gray-800">{item.name}</div>
-                                                            {isSelected && <div className="text-indigo-600 font-bold">✓</div>}
+                                                            {isSelected && <div className="text-indigo-600 font-bold">Selected</div>}
                                                         </div>
                                                         <div className="text-indigo-600 font-bold">₹{item.price}</div>
                                                         <div className="text-xs text-gray-500 mt-1">{item.stock} left</div>
                                                         {item.limitPerUser && <div className="text-xs text-orange-500">Max {item.limitPerUser} / person</div>}
 
-                                                        {hasVariants && (
-                                                            <div className="mt-3">
-                                                                <label className="text-xs font-semibold text-gray-600 block mb-1">{item.variants[0].type}:</label>
+                                                        {item.variants && item.variants.map((variantDef, vIndex) => (
+                                                            <div key={vIndex} className="mt-3">
+                                                                <label className="text-xs font-semibold text-gray-600 block mb-1">{variantDef.type}:</label>
                                                                 <select
                                                                     className="w-full text-sm border-gray-300 rounded p-1 bg-white"
-                                                                    value={currentSelection?.variant || firstVariantOption || ''}
+                                                                    value={currentSelection?.variant?.[variantDef.type] || ''}
                                                                     onChange={(e) => {
-                                                                        const val = e.target.value;
                                                                         if (isSelected) {
-                                                                            updateMerchVariant(item._id, val);
+                                                                            updateMerchVariant(item._id, variantDef.type, e.target.value);
                                                                         }
                                                                     }}
                                                                     onClick={(e) => e.stopPropagation()}
                                                                     disabled={!isSelected}
                                                                 >
-                                                                    {item.variants[0].options.map(opt => (
+                                                                    {variantDef.options.map(opt => (
                                                                         <option key={opt} value={opt}>{opt}</option>
                                                                     ))}
                                                                 </select>
                                                             </div>
-                                                        )}
+                                                        ))}
                                                     </div>
 
                                                     <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
@@ -262,12 +265,11 @@ const EventDetails = () => {
                                                             <button
                                                                 onClick={() => {
                                                                     // Add with default variant if exists
-                                                                    const defaultVar = hasVariants ? item.variants[0].options[0] : null;
-                                                                    handleMerchSelect(item, defaultVar);
+                                                                    handleMerchSelect(item);
                                                                 }}
                                                                 className={`w-full py-2 rounded font-semibold text-sm transition-colors ${item.stock > 0
-                                                                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'
-                                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                    ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600'
+                                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                                     }`}
                                                                 disabled={item.stock <= 0}
                                                             >
@@ -291,17 +293,23 @@ const EventDetails = () => {
 
                             <button
                                 onClick={handleRegister}
-                                className="w-full mt-8 btn-primary text-lg py-3 rounded-xl shadow-lg shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-transform transform active:scale-95"
+                                disabled={isEnded || (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit)}
+                                className={`w-full mt-8 btn-primary text-lg py-3 rounded-xl shadow-lg font-bold transition-all transform active:scale-95 ${isEnded || (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit)
+                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none'
+                                    : 'shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700 text-white'
+                                    }`}
                             >
-                                {event.type === 'Merchandise' ?
-                                    `Purchase Items (Total: ₹${totalMerchCost})` :
-                                    `Confirm Registration ${totalMerchCost > 0 ? `(+ ₹${totalMerchCost} Merch)` : ''} ${event.registrationFee > 0 ? `(Fee: ₹${event.registrationFee})` : ''}`
+                                {isEnded ? 'Event Ended' :
+                                    (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit) ? 'Registration Full' :
+                                        event.type === 'Merchandise' ?
+                                            `Purchase Items (Total: ₹${totalMerchCost})` :
+                                            `Confirm Registration ${totalMerchCost > 0 ? `(+ ₹${totalMerchCost} Merch)` : ''} ${event.registrationFee > 0 ? `(Fee: ₹${event.registrationFee})` : ''}`
                                 }
                             </button>
                         </div>
                     ) : (
                         <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-                            <div className="text-5xl mb-4 text-green-600">✓</div>
+                            <div className="text-5xl mb-4 text-green-600 font-bold">Confirmed</div>
                             <h2 className="text-2xl font-bold text-green-800 mb-2">You are confirmed!</h2>
                             <p className="text-green-700 mb-4">Ticket ID: <span className="font-mono font-bold bg-white px-2 py-1 rounded border border-green-200">{registration.ticketId || 'Generating...'}</span></p>
 
@@ -309,13 +317,7 @@ const EventDetails = () => {
                         </div>
                     )}
 
-                    {/* Team Section (Tier A) */}
-                    {registration && event.type === 'Team' && (
-                        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-                            <h3 className="text-xl font-bold mb-4">Team Management</h3>
-                            <EventTeam event={event} user={user} registration={registration} onRefetch={fetchEventDetails} />
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Right Column: Chat & Feedback */}

@@ -11,7 +11,7 @@ const createEvent = async (req, res) => {
         const {
             name, description, type, eligibility,
             registrationFee, registrationLimit, startDate, endDate, deadline,
-            location, tags, formFields, merchandise, teamSizeMin, teamSizeMax,
+            location, tags, formFields, merchandise,
             status
         } = req.body;
 
@@ -32,12 +32,15 @@ const createEvent = async (req, res) => {
             organizer: organizer._id,
             name, description, type, eligibility,
             registrationFee, registrationLimit, startDate, endDate, deadline,
-            location, tags, formFields, merchandise, teamSizeMin, teamSizeMax,
+            location, tags, formFields, merchandise,
             status: eventStatus
         });
 
         if (eventStatus === 'Published') {
-            sendDiscordNotification(`📢 New Event Published: **${name}** by ${organizer.name}! Check it out now.`);
+            sendDiscordNotification(
+                `📢 New Event Published: **${name}** by ${organizer.name}! Check it out now.`,
+                organizer.discordWebhook
+            );
         }
 
         res.status(201).json(event);
@@ -295,6 +298,73 @@ const getRecommendedEvents = async (req, res) => {
     }
 };
 
+// @desc    Get trending events (Top 5 by registrations in last 24h)
+// @route   GET /api/events/trending
+// @access  Public
+const getTrendingEvents = async (req, res) => {
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        // Aggregate registrations to find top events
+        const trending = await Registration.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: twentyFourHoursAgo }, // Filter last 24h
+                    status: { $in: ['Confirmed', 'Pending'] } // Valid registrations
+                }
+            },
+            {
+                $group: {
+                    _id: '$event', // Group by Event ID
+                    count: { $sum: 1 } // Count registrations
+                }
+            },
+            {
+                $sort: { count: -1 } // Sort descending
+            },
+            {
+                $limit: 5 // Top 5
+            },
+            {
+                $lookup: { // Populate Event details
+                    from: 'events',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'eventDetails'
+                }
+            },
+            {
+                $unwind: '$eventDetails' // Unwind array
+            },
+            {
+                $project: { // Shape output
+                    _id: '$eventDetails._id',
+                    name: '$eventDetails.name',
+                    description: '$eventDetails.description',
+                    startDate: '$eventDetails.startDate',
+                    type: '$eventDetails.type',
+                    registrationFee: '$eventDetails.registrationFee',
+                    registrationCount: '$count'
+                }
+            }
+        ]);
+
+        // If no trending (e.g. dev env), return recently created Published events as fallback
+        if (trending.length === 0) {
+            const fallback = await Event.find({ status: 'Published' })
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .select('name description startDate type registrationFee');
+            return res.json(fallback);
+        }
+
+        res.json(trending);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get event analytics (Organizer)
 // @route   GET /api/events/:id/analytics
 // @access  Private (Organizer)
@@ -344,6 +414,52 @@ const getEventAnalytics = async (req, res) => {
     }
 };
 
+// @desc    Export event registrations to CSV
+// @route   GET /api/events/:id/csv
+// @access  Private (Organizer)
+const exportEventCsv = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        // Check ownership
+        const organizer = await Organizer.findOne({ user: req.user._id });
+        if (!organizer || event.organizer.toString() !== organizer._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        const registrations = await Registration.find({ event: req.params.id })
+            .populate('user', 'firstName lastName email contactNumber collegeName')
+            .sort({ createdAt: -1 });
+
+        // Generate CSV content
+        const headers = ['Ticket ID', 'Status', 'First Name', 'Last Name', 'Email', 'Phone', 'College', 'Reg Date'];
+        const rows = registrations.map(reg => [
+            reg.ticketId || 'N/A',
+            reg.status,
+            reg.user.firstName,
+            reg.user.lastName,
+            reg.user.email,
+            reg.user.contactNumber || 'N/A',
+            reg.user.collegeName || 'N/A',
+
+            new Date(reg.createdAt).toLocaleDateString()
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+
+        res.header('Content-Type', 'text/csv');
+        res.attachment(`${event.name.replace(/[^a-z0-9]/yi, '_')}_participants.csv`);
+        res.send(csvContent);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createEvent,
     getEvents,
@@ -352,5 +468,9 @@ module.exports = {
     updateEvent,
     deleteEvent,
     getRecommendedEvents,
-    getEventAnalytics
+    getTrendingEvents,
+    getRecommendedEvents,
+    getTrendingEvents,
+    getEventAnalytics,
+    exportEventCsv
 };

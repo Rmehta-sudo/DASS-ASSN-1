@@ -19,6 +19,9 @@ const authUser = async (req, res) => {
         let organizerDetails = null;
         if (user.role === 'organizer') {
             organizerDetails = await Organizer.findOne({ user: user._id });
+            if (organizerDetails && organizerDetails.isArchived) {
+                return res.status(401).json({ message: 'Account is archived. Please contact Admin.' });
+            }
         }
 
         res.json({
@@ -134,10 +137,26 @@ const updateUserProfile = async (req, res) => {
 
         // Password change (Optional - if provided)
         if (req.body.password) {
+            if (req.body.password.length < 6) {
+                return res.status(400).json({ message: 'Password must be at least 6 characters' });
+            }
             user.password = req.body.password;
         }
 
         const updatedUser = await user.save();
+
+        // Update Organizer details if applicable
+        let organizerDetails = null;
+        if (user.role === 'organizer') {
+            organizerDetails = await Organizer.findOne({ user: user._id });
+            if (organizerDetails) {
+                if (req.body.description !== undefined) organizerDetails.description = req.body.description;
+                if (req.body.category !== undefined) organizerDetails.category = req.body.category;
+                if (req.body.discordWebhook !== undefined) organizerDetails.discordWebhook = req.body.discordWebhook;
+                await organizerDetails.save();
+            }
+        }
+
         await updatedUser.populate('following', 'organizerName category');
 
         res.json({
@@ -150,7 +169,12 @@ const updateUserProfile = async (req, res) => {
             following: updatedUser.following,
             token: generateToken(updatedUser._id),
             contactNumber: updatedUser.contactNumber,
-            collegeName: updatedUser.collegeName
+            collegeName: updatedUser.collegeName,
+            organizerDetails: organizerDetails ? {
+                description: organizerDetails.description,
+                category: organizerDetails.category,
+                discordWebhook: organizerDetails.discordWebhook
+            } : null
         });
 
     } catch (error) {
@@ -166,7 +190,7 @@ const getUserProfile = async (req, res) => {
         const user = await User.findById(req.user._id).populate('following', 'organizerName category');
 
         if (user) {
-            res.json({
+            const response = {
                 _id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
@@ -177,7 +201,20 @@ const getUserProfile = async (req, res) => {
                 collegeName: user.collegeName,
                 interests: user.interests,
                 following: user.following
-            });
+            };
+
+            if (user.role === 'organizer') {
+                const organizer = await Organizer.findOne({ user: user._id });
+                if (organizer) {
+                    response.organizerDetails = {
+                        description: organizer.description,
+                        category: organizer.category,
+                        discordWebhook: organizer.discordWebhook
+                    };
+                }
+            }
+
+            res.json(response);
         } else {
             res.status(404).json({ message: 'User not found' });
         }

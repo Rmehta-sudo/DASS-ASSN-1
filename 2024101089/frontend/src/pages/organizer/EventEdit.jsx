@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormBuilder from '../../components/FormBuilder';
+import MerchandiseBuilder from '../../components/MerchandiseBuilder';
 import { API_URL } from '../../apiConfig';
 
 const EventEdit = () => {
@@ -48,12 +49,7 @@ const EventEdit = () => {
                 deadline: data.deadline ? new Date(data.deadline).toISOString().slice(0, 16) : '',
                 tags: data.tags ? data.tags.join(', ') : '',
                 formFields: data.formFields || [],
-                merchandise: (data.merchandise || []).map(m => ({
-                    ...m,
-                    _variantString: m.variants && m.variants.length > 0
-                        ? `${m.variants[0].type}: ${m.variants[0].options.join(', ')}`
-                        : ''
-                }))
+                merchandise: data.merchandise || []
             };
 
             setEventData(formattedEvent);
@@ -91,8 +87,7 @@ const EventEdit = () => {
                 ...eventData,
                 tags: eventData.tags.split(',').map(t => t.trim()),
                 merchandise: eventData.merchandise.map(m => {
-                    const { _variantString, ...rest } = m;
-                    return { ...rest, limitPerUser: Number(rest.limitPerUser) || 1 };
+                    return { ...m, limitPerUser: Number(m.limitPerUser) || 1 };
                 })
             };
 
@@ -176,18 +171,7 @@ const EventEdit = () => {
                                     value={eventData.registrationLimit} onChange={handleChange} />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Team Size (Min)</label>
-                                <input type="number" name="teamSizeMin" min="1" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.teamSizeMin || 1} onChange={handleChange} />
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Team Size (Max)</label>
-                                <input type="number" name="teamSizeMax" min="1" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    value={eventData.teamSizeMax || 1} onChange={handleChange} />
-                                <p className="text-xs text-gray-500">Set &gt; 1 for Team Events</p>
-                            </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Start Date</label>
@@ -215,119 +199,14 @@ const EventEdit = () => {
                         </div>
 
                         {/* Merchandise Editor Section */}
-                        <div className="mt-8 pt-6 border-t">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Merchandise Management</h3>
-                            <div className="space-y-4">
-                                {eventData.merchandise.map((item, index) => (
-                                    <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const newMerch = eventData.merchandise.filter((_, i) => i !== index);
-                                                setEventData({ ...eventData, merchandise: newMerch });
-                                            }}
-                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold"
-                                        >
-                                            &times;
-                                        </button>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase">Item Name</label>
-                                                <input
-                                                    type="text"
-                                                    value={item.name}
-                                                    onChange={(e) => {
-                                                        const newMerch = [...eventData.merchandise];
-                                                        newMerch[index].name = e.target.value;
-                                                        setEventData({ ...eventData, merchandise: newMerch });
-                                                    }}
-                                                    className="w-full border-gray-300 rounded p-1 text-sm"
-                                                    placeholder="e.g. T-Shirt"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase">Price (₹)</label>
-                                                <input
-                                                    type="number"
-                                                    value={item.price}
-                                                    onChange={(e) => {
-                                                        const newMerch = [...eventData.merchandise];
-                                                        newMerch[index].price = e.target.value;
-                                                        setEventData({ ...eventData, merchandise: newMerch });
-                                                    }}
-                                                    className="w-full border-gray-300 rounded p-1 text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase">Stock</label>
-                                                <input
-                                                    type="number"
-                                                    value={item.stock}
-                                                    onChange={(e) => {
-                                                        const newMerch = [...eventData.merchandise];
-                                                        newMerch[index].stock = e.target.value;
-                                                        setEventData({ ...eventData, merchandise: newMerch });
-                                                    }}
-                                                    className="w-full border-gray-300 rounded p-1 text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase">Max per User</label>
-                                                <input
-                                                    type="number"
-                                                    value={item.limitPerUser || 1}
-                                                    onChange={(e) => {
-                                                        const newMerch = [...eventData.merchandise];
-                                                        newMerch[index].limitPerUser = e.target.value;
-                                                        setEventData({ ...eventData, merchandise: newMerch });
-                                                    }}
-                                                    className="w-full border-gray-300 rounded p-1 text-sm"
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                                                    Variants (Format: "Type: Option1, Option2")
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={item._variantString || ''}
-                                                    placeholder="e.g. Size: S, M, L, XL"
-                                                    onChange={(e) => {
-                                                        const str = e.target.value;
-                                                        const newMerch = [...eventData.merchandise];
-                                                        newMerch[index]._variantString = str;
-
-                                                        // Parse immediately for preview or on save
-                                                        // Simple parser: "Type: Opt1, Opt2"
-                                                        if (str.includes(':')) {
-                                                            const [type, opts] = str.split(':');
-                                                            const options = opts.split(',').map(s => s.trim()).filter(Boolean);
-                                                            newMerch[index].variants = [{ type: type.trim(), options }];
-                                                        } else {
-                                                            newMerch[index].variants = [];
-                                                        }
-
-                                                        setEventData({ ...eventData, merchandise: newMerch });
-                                                    }}
-                                                    className="w-full border-gray-300 rounded p-1 text-sm font-mono bg-white"
-                                                />
-                                                <p className="text-xs text-gray-400 mt-1">Leave blank for no variants.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => setEventData({
-                                        ...eventData,
-                                        merchandise: [...eventData.merchandise, { name: '', price: 0, stock: 100, limitPerUser: 1, variants: [], _variantString: '' }]
-                                    })}
-                                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition"
-                                >
-                                    + Add Merchandise Item
-                                </button>
+                        {eventData.type === 'Merchandise' && (
+                            <div className="mt-8 pt-6 border-t">
+                                <MerchandiseBuilder
+                                    merchandise={eventData.merchandise}
+                                    setMerchandise={(newMerch) => setEventData({ ...eventData, merchandise: newMerch })}
+                                />
                             </div>
-                        </div>
+                        )}
 
                         {/* Form Builder Section (Only for Normal Events) */}
                         {eventData.type === 'Normal' && (

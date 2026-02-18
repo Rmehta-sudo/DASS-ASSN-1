@@ -13,6 +13,7 @@ import ResetRequest from './pages/organizer/ResetRequest';
 import AttendanceScanner from './pages/organizer/AttendanceScanner';
 import Onboarding from './pages/Onboarding';
 import EventEdit from './pages/organizer/EventEdit';
+import OrganizerEventDetails from './pages/organizer/OrganizerEventDetails';
 import Profile from './pages/Profile';
 import Clubs from './pages/Clubs';
 import ClubDetails from './pages/ClubDetails';
@@ -84,6 +85,11 @@ function App() {
                         <Route path="/organizer/events/edit/:id" element={
                             <PrivateRoute>
                                 <EventEdit />
+                            </PrivateRoute>
+                        } />
+                        <Route path="/organizer/events/:id" element={
+                            <PrivateRoute>
+                                <OrganizerEventDetails />
                             </PrivateRoute>
                         } />
                         <Route path="/organizer/scanner" element={

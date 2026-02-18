@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents, getEventAnalytics
+    createEvent, getEvents, getMyEvents, getEventById, updateEvent, deleteEvent, getRecommendedEvents, getEventAnalytics, getTrendingEvents, exportEventCsv
 } = require('../controllers/eventController');
 const { protect, authorize, optionalProtect } = require('../middleware/authMiddleware');
 
@@ -15,6 +15,9 @@ router.route('/my')
 router.route('/recommended')
     .get(protect, getRecommendedEvents);
 
+router.route('/trending')
+    .get(getTrendingEvents);
+
 router.route('/:id')
     .get(getEventById)
     .put(protect, authorize('organizer'), updateEvent)
@@ -22,5 +25,8 @@ router.route('/:id')
 
 router.route('/:id/analytics')
     .get(protect, authorize('organizer'), getEventAnalytics);
+
+router.route('/:id/csv')
+    .get(protect, authorize('organizer'), exportEventCsv);
 
 module.exports = router;

@@ -106,7 +106,7 @@ const FeedbackForm = ({ eventId, registrationStatus, eventEndDate }) => {
                     <div key={rev._id} className="bg-gray-50 p-4 rounded">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center">
-                                <span className="text-yellow-500 font-bold mr-2">{'★'.repeat(rev.rating)}</span>
+                                <span className="text-yellow-500 font-bold mr-2">Rating: {rev.rating}/5</span>
                                 <span className="text-gray-400 text-xs">{new Date(rev.createdAt).toLocaleDateString()}</span>
                             </div>
                         </div>

@@ -151,7 +151,7 @@ const MyRegistrations = () => {
 
                 {filteredRegs.length === 0 ? (
                     <div className="bg-white p-16 rounded-2xl shadow-sm text-center border border-gray-100">
-                        <div className="text-4xl mb-4">📭</div>
+                        <div className="text-4xl mb-4 font-bold text-gray-300">No Records</div>
                         <p className="text-gray-500 text-lg mb-6">No {activeTab.toLowerCase()} records found.</p>
                         {activeTab !== 'Cancelled' && (
                             <Link to="/events" className="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
@@ -185,21 +185,22 @@ const MyRegistrations = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm text-gray-600">
-                                        {reg.teamName && (
-                                            <div className="bg-gray-50 p-2 rounded">
-                                                <span className="font-semibold block text-xs text-gray-500 uppercase">Team Name</span>
-                                                {reg.teamName}
-                                            </div>
-                                        )}
+
 
                                         {reg.ticketId ? (
                                             <div
-                                                className="bg-indigo-50 p-2 rounded cursor-pointer hover:bg-indigo-100 transition group"
+                                                className="bg-indigo-50 p-2 rounded cursor-pointer hover:bg-indigo-100 transition group relative"
                                                 onClick={() => copyTicketId(reg.ticketId)}
                                                 title="Click to copy"
                                             >
-                                                <span className="font-semibold block text-xs text-indigo-500 uppercase">Ticket ID 📋</span>
+                                                <span className="font-semibold block text-xs text-indigo-500 uppercase">Ticket ID</span>
                                                 <span className="font-mono text-indigo-700">{reg.ticketId}</span>
+
+                                                {/* QR Code Preview on Hover/Click could be nice, but let's just show it small or add a modal? 
+                                                    For now, let's keep it simple: Click copies. 
+                                                    But requirement says "contains a QR code". 
+                                                    Let's add a visual QR code next to it.
+                                                */}
                                             </div>
                                         ) : (
                                             <div className="bg-gray-50 p-2 rounded">
@@ -207,6 +208,18 @@ const MyRegistrations = () => {
                                                 <span className="italic text-gray-400">Pending...</span>
                                             </div>
                                         )}
+
+                                        {reg.ticketId && (
+                                            <div className="bg-white p-2 rounded border border-gray-100 flex justify-center items-center">
+                                                <img
+                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${reg.ticketId}`}
+                                                    alt="QR Code"
+                                                    className="w-16 h-16 object-contain"
+                                                    title="Scan at venue"
+                                                />
+                                            </div>
+                                        )}
+
                                     </div>
 
                                     {reg.status === 'Pending' && (
@@ -235,7 +248,7 @@ const MyRegistrations = () => {
                                             onClick={() => openFeedbackModal(reg)}
                                             className="w-full text-center py-2 px-4 rounded-lg bg-yellow-400 text-yellow-900 font-medium hover:bg-yellow-500 transition shadow-sm"
                                         >
-                                            Rate Event ⭐
+                                            Rate Event
                                         </button>
                                     )}
 
@@ -275,7 +288,7 @@ const MyRegistrations = () => {
                                             onClick={() => setRating(star)}
                                             className={`transition-transform hover:scale-110 ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
                                         >
-                                            ★
+                                            {star}
                                         </button>
                                     ))}
                                 </div>

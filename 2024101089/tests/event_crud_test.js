@@ -12,7 +12,7 @@ const testEventCRUD = async () => {
         console.log("\n1. Logging in as Music Club...");
         const loginRes = await axios.post(`${API_URL}/auth/login`, {
             email: 'music@clubs.iiit.ac.in',
-            password: 'password123'
+            password: 'thisisclub'
         });
         organizerToken = loginRes.data.token;
         console.log("✅ Organizer Login Successful:", loginRes.data.name);
