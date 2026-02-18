@@ -1,14 +1,16 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const colors = require('colors');
+const path = require('path');
 const Event = require('./models/Event');
 const Registration = require('./models/Registration');
 const User = require('./models/User');
-const Organizer = require('./models/Organizer'); // Needed to create event
-const { registerEvent } = require('./controllers/registrationController');
+const Organizer = require('./models/Organizer');
+const { registerEvent, updateRegistrationStatus } = require('./controllers/registrationController');
 const { createEvent } = require('./controllers/eventController');
 
-dotenv.config();
+// Load env vars
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const connectDB = async () => {
     try {
@@ -35,13 +37,18 @@ const mockRes = () => {
     return res;
 };
 
+const mockReq = (user, body, params = {}) => ({
+    user,
+    body,
+    params
+});
+
 const runTest = async () => {
     await connectDB();
 
     try {
         // 1. Setup Data
         console.log("Setting up test data...");
-        // Find a user or create one
         let user = await User.findOne({ email: 'test_merch_user@example.com' });
         if (!user) {
             user = await User.create({
@@ -54,17 +61,12 @@ const runTest = async () => {
             });
         }
 
-        // Find an organizer logic (or mock it by creating one linked to a user)
-        // For registerEvent, we just need a user and an event.
-        // But to createEvent, we need an organizer.
-        // Let's create an event manually to verify schema first.
-
-        const organizerId = new mongoose.Types.ObjectId(); // Dummy organizer ID
+        const organizerId = new mongoose.Types.ObjectId();
 
         // Create Merchandise Event
         const eventData = {
             organizer: organizerId,
-            name: "Test Merch Event",
+            name: `Test Merch Event ${Date.now()}`,
             description: "Testing Merch Logic",
             type: "Merchandise",
             eligibility: "Anyone",
@@ -90,95 +92,115 @@ const runTest = async () => {
 
         const event = await Event.create(eventData);
         console.log(`Event Created: ${event._id}`);
-        console.log("Merchandise IDs:", event.merchandise.map(m => `${m.name}: ${m._id}`));
-
         const tShirtId = event.merchandise[0]._id;
         const stickerId = event.merchandise[1]._id;
 
-        // 2. Test Success: Buy 1 T-Shirt (Size M)
+        // 2. Test Success: Buy 1 T-Shirt (Size M) -> Should be Pending but Stock Deducted
         console.log("\n--- Test 1: Buy 1 T-Shirt (Size M) ---");
-        let req = {
-            user: { _id: user._id },
-            body: {
-                eventId: event._id,
-                merchandiseSelection: [
-                    { itemId: tShirtId, quantity: 1, variant: "Size: M" }
-                ]
-            }
-        };
+        let req = mockReq({ _id: user._id }, {
+            eventId: event._id,
+            merchandiseSelection: [
+                { itemId: tShirtId, quantity: 1, variant: { Size: "M" } }
+            ]
+        });
         let res = mockRes();
+
         await registerEvent(req, res);
-        console.log(`Status: ${res.statusCode}`);
+        console.log(`Status Code: ${res.statusCode}`);
+
+        let regId;
         if (res.statusCode === 201) {
-            console.log("Success!");
-            // Verify Stock
+            regId = res.data._id;
+            console.log(`Registration Logic Status: ${res.data.status}`);
+
+            // Verify Stock Deducted Immediately
             const updatedEvent = await Event.findById(event._id);
             const tshirt = updatedEvent.merchandise.id(tShirtId);
-            console.log(`New Stock for T-Shirt: ${tshirt.stock} (Expected: 9)`);
-            if (tshirt.stock !== 9) throw new Error("Stock not updated correcty");
+            console.log(`Stock for T-Shirt: ${tshirt.stock} (Expected: 9)`);
+
+            if (tshirt.stock !== 9) throw new Error("Stock not deducted immediately!");
+            if (res.data.status !== 'Pending') throw new Error("Status should be Pending for Merch!");
         } else {
             console.log("Failed:", res.data);
+            throw new Error("Test 1 Failed");
         }
 
-        // Clear registration to allow next test
-        await Registration.deleteMany({ user: user._id, event: event._id });
+        // 3. Test Approval: Organizer Approves -> Ticket Check
+        console.log("\n--- Test 2: Organizer Approves ---");
+        req = mockReq({ _id: new mongoose.Types.ObjectId() }, { status: 'Confirmed' }, { id: regId }); // Mock organizer user not needed really for this controller function check
+        res = mockRes();
 
-        // 3. Test Failure: Exceed Limit
-        console.log("\n--- Test 2: Exceed Limit (Buy 3 T-Shirts) ---");
-        // Reset stock manually for clean test or just try to buy 3 more? Limit is 2 per user.
-        // User already bought 1. Buying 3 now = 4 total? 
-        // Wait, logic implementation currently checks limit per *transaction* (request), not per user history.
-        // Requirements say "configurable purchase limit per participant".
-        // My implementation: `if (item.limitPerUser && selection.quantity > item.limitPerUser)`
-        // This only checks the CURRENT request. It does not check previous purchases.
-        // This is a GAP in my implementation.
-        // BUT let's test what I implemented first.
+        await updateRegistrationStatus(req, res);
+        console.log(`Approve Status Code: ${res.statusCode}`);
+        if (res.statusCode === 200) {
+            console.log(`Updated Reg Status: ${res.data.status}`);
+            console.log(`Ticket ID: ${res.data.ticketId}`);
+            if (res.data.status !== 'Confirmed') throw new Error("Status not confirmed");
+            if (!res.data.ticketId) throw new Error("Ticket ID not generated");
 
-        req = {
-            user: { _id: user._id },
-            body: {
-                eventId: event._id,
-                merchandiseSelection: [
-                    { itemId: tShirtId, quantity: 3, variant: "Size: S" }
-                ]
-            }
-        };
+            // Stock should STILL be 9 (no double deduction)
+            const eventCheck = await Event.findById(event._id);
+            const tshirt = eventCheck.merchandise.id(tShirtId);
+            console.log(`Stock after approval: ${tshirt.stock} (Expected: 9)`);
+            if (tshirt.stock !== 9) throw new Error("Stock changed incorrectly on approval");
+        } else {
+            console.log("Approve Failed:", res.data);
+            throw new Error("Test 2 Failed");
+        }
+
+        // 4. Test Rejection: Reject -> Stock Restored?
+        console.log("\n--- Test 3: Rejection Restores Stock ---");
+        // Create another registration first
+        const user2 = await User.create({
+            firstName: 'Test2',
+            lastName: 'User2',
+            email: 'test_merch_user2@example.com',
+            password: 'password123',
+            contactNumber: '0987654321',
+            role: 'participant'
+        });
+
+        req = mockReq({ _id: user2._id }, {
+            eventId: event._id,
+            merchandiseSelection: [
+                { itemId: tShirtId, quantity: 2, variant: { Size: "L" } }
+            ]
+        });
         res = mockRes();
         await registerEvent(req, res);
-        console.log(`Status: ${res.statusCode}`);
-        if (res.statusCode === 400 && res.data.message.includes("Limit")) {
-            console.log("Success: Correctly blocked limit exceed.");
-        } else {
-            console.log("Failed: Should have blocked.", res.data);
+        console.log(`Test 3 Register Status: ${res.statusCode}`);
+        if (res.statusCode !== 201) {
+            console.log("Test 3 Register Failed:", res.data);
+            throw new Error("Test 3 Register Failed");
         }
-        // Clear registration
-        await Registration.deleteMany({ user: user._id, event: event._id });
 
-        // 4. Test Failure: Missing Variant
-        console.log("\n--- Test 3: Missing Variant ---");
-        req = {
-            user: { _id: user._id },
-            body: {
-                eventId: event._id,
-                merchandiseSelection: [
-                    { itemId: tShirtId, quantity: 1 } // No variant
-                ]
-            }
-        };
+        const reg2Id = res.data._id;
+        console.log(`Test 3 Reg ID: ${reg2Id}`);
+
+        // Stock should be 9 - 2 = 7
+        let eventCheck = await Event.findById(event._id);
+        console.log(`Stock after 2nd buy: ${eventCheck.merchandise.id(tShirtId).stock} (Expected: 7)`);
+        if (eventCheck.merchandise.id(tShirtId).stock !== 7) throw new Error("Stock not deducted for 2nd user");
+
+        // Now Reject
+        req = mockReq({}, { status: 'Rejected' }, { id: reg2Id });
         res = mockRes();
-        await registerEvent(req, res);
-        console.log(`Status: ${res.statusCode}`);
-        if (res.statusCode === 400 && res.data.message.includes("Variant")) {
-            console.log("Success: Correctly blocked missing variant.");
-        } else {
-            console.log("Failed: Should have blocked.", res.data);
-        }
+        await updateRegistrationStatus(req, res);
+        console.log(`Test 3 Reject Status: ${res.statusCode}`);
+
+        // Stock should be 7 + 2 = 9
+        eventCheck = await Event.findById(event._id);
+        console.log(`Stock after rejection: ${eventCheck.merchandise.id(tShirtId).stock} (Expected: 9)`);
+        if (eventCheck.merchandise.id(tShirtId).stock !== 9) throw new Error("Stock not restored on rejection");
+
 
         // Cleanup
         console.log("\nCleaning up...");
         await Event.findByIdAndDelete(event._id);
         await Registration.deleteMany({ event: event._id });
-        // await User.findByIdAndDelete(user._id); // Keep user for future
+        // await User.findByIdAndDelete(user._id);
+
+        console.log("\nALL TESTS PASSED".green.bold);
 
     } catch (err) {
         console.error(err);

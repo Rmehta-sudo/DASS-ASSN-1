@@ -60,14 +60,29 @@ const AdminDashboard = () => {
     }, [activeTab]);
 
     const handleProcessRequest = async (id, status) => {
+        let adminComment = "Processed by Admin";
+
+        if (status === 'Rejected') {
+            const reason = prompt("Please enter a reason for rejection:");
+            if (reason === null) return; // Cancelled
+            if (reason.trim() === "") {
+                alert("Reason is required for rejection.");
+                return;
+            }
+            adminComment = reason;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const { data } = await axios.put(`${API_URL}/admin/reset-request/${id}`,
-                { status, adminComment: "Processed by Admin" }, config);
+                { status, adminComment }, config);
 
             if (status === 'Approved') {
-                alert(`Request Approved! New Password: ${data.adminComment.split(': ')[1]}`);
+                const newPassword = data.adminComment.split(': ')[1];
+                prompt("Request Approved! Copy the new password below and share it with the organizer:", newPassword);
+            } else {
+                alert("Request Rejected.");
             }
             fetchRequests();
         } catch (error) {

@@ -151,6 +151,20 @@ const updateUserProfile = async (req, res) => {
 
         // Password change (Optional - if provided)
         if (req.body.password) {
+            // Organizer cannot change password here
+            if (user.role === 'organizer') {
+                return res.status(403).json({ message: 'Organizers cannot change their password directly. Contact Admin.' });
+            }
+
+            // Verify current password
+            if (!req.body.currentPassword) {
+                return res.status(400).json({ message: 'Current password is required to set a new password' });
+            }
+
+            if (!(await user.matchPassword(req.body.currentPassword))) {
+                return res.status(401).json({ message: 'Invalid current password' });
+            }
+
             if (req.body.password.length < 6) {
                 return res.status(400).json({ message: 'Password must be at least 6 characters' });
             }

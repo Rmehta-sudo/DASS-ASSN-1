@@ -59,7 +59,9 @@ const registrationRoutes = require('./routes/registrationRoutes');
 
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
-const feedbackRoutes = require('./routes/feedbackRoutes'); // Import feedbackRoutes
+const feedbackRoutes = require('./routes/feedbackRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const Notification = require('./models/Notification'); // Import Notification Model
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -68,7 +70,8 @@ app.use('/api/registrations', registrationRoutes);
 
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/feedback', feedbackRoutes); // Use feedbackRoutes
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Make io accessible to our router
 app.set('io', io);
@@ -81,6 +84,12 @@ io.on('connection', (socket) => {
     socket.on('join_room', (room) => {
         socket.join(room);
         console.log(`User ${socket.id} joined room: ${room}`);
+    });
+
+    // Join User Specific Room for Notifications
+    socket.on('join_user_room', (userId) => {
+        socket.join(`user_${userId}`);
+        console.log(`User ${socket.id} joined user room: user_${userId}`);
     });
 
     // Send Message
@@ -108,6 +117,40 @@ io.on('connection', (socket) => {
 
             // Broadcast to room
             io.to(room).emit('receive_message', msg);
+
+            // --- Notification Logic ---
+            // 1. Reply Notification
+            if (parentMessage) {
+                const parentMsg = await Message.findById(parentMessage);
+                if (parentMsg && parentMsg.sender.toString() !== senderId) {
+                    // Create notification for original sender
+                    await Notification.create({
+                        recipient: parentMsg.sender,
+                        message: `New reply to your message in ${type}: "${content.substring(0, 30)}..."`,
+                        type: 'reply',
+                        relatedId: objectId // Link to event/team
+                    });
+
+                    // Emit real-time notification
+                    io.to(`user_${parentMsg.sender}`).emit('receive_notification', {
+                        message: `New reply from ${msg.sender.firstName}: "${content.substring(0, 30)}..."`,
+                        type: 'reply',
+                        relatedId: objectId
+                    });
+                }
+            }
+
+            // 2. Announcement Notification (if messageType is announcement)
+            if (messageType === 'announcement') {
+                // For now, we might not want to create a DB notification for EVERY user as it's expensive.
+                // But we can emit a socket event to the room.
+                socket.to(room).emit('receive_notification', {
+                    message: `New announcement: ${content.substring(0, 50)}...`,
+                    type: 'announcement',
+                    relatedId: objectId
+                });
+            }
+
         } catch (err) {
             console.error("Error saving message:", err);
         }

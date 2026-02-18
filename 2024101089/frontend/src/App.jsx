@@ -20,6 +20,7 @@ import ClubDetails from './pages/ClubDetails';
 import Navbar from './components/Navbar';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Notifications from './pages/Notifications';
 
 // A simple PrivateRoute component to protect dashboard
 const PrivateRoute = ({ children }) => {
@@ -42,6 +43,11 @@ function App() {
                         <Route path="/onboarding" element={
                             <PrivateRoute>
                                 <Onboarding />
+                            </PrivateRoute>
+                        } />
+                        <Route path="/notifications" element={
+                            <PrivateRoute>
+                                <Notifications />
                             </PrivateRoute>
                         } />
                         <Route path="/profile" element={

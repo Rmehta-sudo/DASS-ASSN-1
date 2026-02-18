@@ -12,6 +12,9 @@ const generateTicketId = () => {
 // @desc    Register for an event
 // @route   POST /api/registrations
 // @access  Private
+// @desc    Register for an event
+// @route   POST /api/registrations
+// @access  Private
 const registerEvent = async (req, res) => {
     try {
         const { eventId, responses, merchandiseSelection } = req.body;
@@ -51,7 +54,7 @@ const registerEvent = async (req, res) => {
                         return res.status(404).json({ message: `Merchandise item not found: ${selection.itemId}` });
                     }
 
-                    // Check Sort
+                    // Check Stock - STRICT CHECK
                     if (item.stock < selection.quantity) {
                         return res.status(400).json({ message: `Insufficient stock for ${item.name}` });
                     }
@@ -79,9 +82,8 @@ const registerEvent = async (req, res) => {
                         }
                     }
 
-                    // Deduct Stock - MOVED TO APPROVAL
-                    // item.stock -= selection.quantity;
-                    // totalCost += item.price * selection.quantity;
+                    // Deduct Stock IMMEDIATELY via mongoose doc (saved later)
+                    item.stock -= selection.quantity;
                     totalCost += item.price * selection.quantity;
                 }
             } else if (event.type === 'Merchandise') {
@@ -113,8 +115,6 @@ const registerEvent = async (req, res) => {
         // Update event count & stock
         if (status === 'Confirmed' && event.type !== 'Merchandise') {
             // For normal events, increment registration count
-            // (For merchandise events, we don't count "registrations" against a global limit usually, 
-            // but if there is a global limit, we should. Let's assume yes.)
             event.currentRegistrations = event.currentRegistrations + 1;
         }
 
@@ -149,6 +149,7 @@ const registerEvent = async (req, res) => {
                 <p>Your order for <strong>${event.name}</strong> is pending payment.</p>
                 <p><strong>Total Amount:</strong> ₹${totalCost}</p>
                 <p>Please upload payment proof in your dashboard to confirm your order.</p>
+                <p><strong>Note:</strong> Your items are reserved pending approval.</p>
             `;
             try {
                 await sendEmail({
@@ -223,38 +224,67 @@ const getEventRegistrations = async (req, res) => {
 const updateRegistrationStatus = async (req, res) => {
     try {
         const { status } = req.body; // 'Confirmed', 'Rejected'
+
         const registration = await Registration.findById(req.params.id);
 
         if (!registration) {
             return res.status(404).json({ message: 'Registration not found' });
         }
 
+        const oldStatus = registration.status;
+
         registration.status = status;
+
+        const event = await Event.findById(registration.event);
+
+        // Handle Stock Release if Rejected/Cancelled
+        if ((status === 'Rejected' || status === 'Cancelled') && oldStatus !== 'Rejected' && oldStatus !== 'Cancelled') {
+            // Return stock
+            if (registration.merchandiseSelection && registration.merchandiseSelection.length > 0) {
+                for (const sel of registration.merchandiseSelection) {
+                    const item = event.merchandise.id(sel.itemId);
+                    if (item) {
+                        item.stock += sel.quantity;
+                    }
+                }
+                const savedEvent = await event.save();
+            }
+            // Decrement count for normal events if confirmed previously
+            if (oldStatus === 'Confirmed' && event.type !== 'Merchandise') {
+                event.currentRegistrations = Math.max(0, event.currentRegistrations - 1);
+                await event.save();
+            }
+        }
 
         // Generate ticket if confirming
         if (status === 'Confirmed' && !registration.ticketId) {
             registration.ticketId = generateTicketId();
 
             // Update event count for Normal Events
-            const event = await Event.findById(registration.event);
             if (event.type !== 'Merchandise') {
                 event.currentRegistrations = event.currentRegistrations + 1;
-            } else {
-                // For Merchandise, deduct stock NOW
-                // We need to re-validate stock here because it wasn't deducted at registration
-                const selection = registration.merchandiseSelection;
-                if (selection && selection.length > 0) {
-                    for (const sel of selection) {
-                        const item = event.merchandise.id(sel.itemId);
-                        if (!item) throw new Error(`Item ${sel.itemId} not found`);
-                        if (item.stock < sel.quantity) {
-                            throw new Error(`Insufficient stock for ${item.name}. Cannot approve.`);
-                        }
-                        item.stock -= sel.quantity;
-                    }
-                }
+                await event.save();
             }
-            await event.save();
+
+            // Send Confirmation Email
+            const user = await User.findById(registration.user);
+            const message = `
+                <h1>Registration Approved!</h1>
+                <p>Hello ${user.name},</p>
+                <p>Your registration for <strong>${event.name}</strong> has been approved.</p>
+                <p><strong>Ticket ID:</strong> ${registration.ticketId}</p>
+                <p>Please present this Ticket ID or the QR code available in your dashboard at the venue.</p>
+            `;
+            try {
+                await sendEmail({
+                    email: user.email,
+                    subject: `Ticket Check - ${event.name}`,
+                    message: `You have registered for ${event.name}. Ticket ID: ${registration.ticketId}`,
+                    html: message
+                });
+            } catch (err) {
+                console.error("Email send failed", err);
+            }
         }
 
         await registration.save();

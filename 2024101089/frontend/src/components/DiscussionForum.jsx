@@ -164,9 +164,9 @@ const DiscussionForum = ({ eventId, user, isOrganizer }) => {
 
                     {/* Reactions Display */}
                     {Object.keys(reactionCounts).length > 0 && (
-                        <div className="flex bg-black/10 rounded-full px-2 py-0.5 mt-2 w-fit gap-2 -mb-5 translate-y-3 shadow-sm backdrop-blur-sm z-10">
+                        <div className="flex bg-white/90 rounded-full px-2 py-1 mt-2 w-fit gap-2 -mb-6 translate-y-4 shadow-sm border border-gray-100 z-10">
                             {Object.entries(reactionCounts).map(([emoji, count]) => (
-                                <span key={emoji} className="text-xs">{emoji} {count}</span>
+                                <span key={emoji} className="text-xs font-medium">{emoji} {count}</span>
                             ))}
                         </div>
                     )}
@@ -206,6 +206,23 @@ const DiscussionForum = ({ eventId, user, isOrganizer }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
+                {/* Pinned Messages Section */}
+                {messages.some(m => m.isPinned) && (
+                    <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3 shadow-sm sticky top-0 z-20">
+                        <h4 className="text-xs font-bold text-yellow-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            📌 Pinned Messages
+                        </h4>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {messages.filter(m => m.isPinned).map(msg => (
+                                <div key={msg._id} className="text-sm text-yellow-900 bg-white/50 p-2 rounded-lg border border-yellow-100">
+                                    <span className="font-semibold mr-1">{msg.sender.firstName}:</span>
+                                    {msg.content}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {messages.length === 0 && (
                     <div className="text-center text-gray-400 mt-20">
                         <p>No messages yet.</p>

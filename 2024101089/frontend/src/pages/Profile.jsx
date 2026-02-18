@@ -20,7 +20,7 @@ const Profile = () => {
         interests: [],
         following: [],
         password: '',
-
+        currentPassword: '',
         confirmPassword: '',
         // Organizer specific
         description: '',
@@ -128,13 +128,14 @@ const Profile = () => {
 
             if (formData.password) {
                 updateData.password = formData.password;
+                updateData.currentPassword = formData.currentPassword;
             }
 
             const { data } = await axios.put(`${API_URL}/auth/profile`, updateData, config);
 
             toast.success("Profile Updated Successfully");
             setEditMode(false);
-            setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+            setFormData(prev => ({ ...prev, password: '', confirmPassword: '', currentPassword: '' }));
 
             // Update context and local storage
             const updatedUser = { ...user, ...data };
@@ -376,33 +377,46 @@ const Profile = () => {
                 {editMode && (
                     <>
                         <hr className="my-6 border-gray-200" />
-                        <div className="mb-6 bg-red-50 p-4 rounded border border-red-100">
-                            <h2 className="text-lg font-semibold text-red-700 mb-3">Change Password</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-gray-600 mb-1">New Password</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className="w-full border p-2 rounded bg-white"
-                                        placeholder="Leave blank to keep current"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-gray-600 mb-1">Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
-                                        className="w-full border p-2 rounded bg-white"
-                                        placeholder="Confirm new password"
-                                    />
+                        {user?.role !== 'organizer' && (
+                            <div className="mb-6 bg-red-50 p-4 rounded border border-red-100">
+                                <h2 className="text-lg font-semibold text-red-700 mb-3">Change Password</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-gray-600 mb-1">Current Password</label>
+                                        <input
+                                            type="password"
+                                            name="currentPassword"
+                                            value={formData.currentPassword}
+                                            onChange={handleChange}
+                                            className="w-full border p-2 rounded bg-white"
+                                            placeholder="Required to change password"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-600 mb-1">New Password</label>
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full border p-2 rounded bg-white"
+                                            placeholder="Leave blank to keep current"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-600 mb-1">Confirm New Password</label>
+                                        <input
+                                            type="password"
+                                            name="confirmPassword"
+                                            value={formData.confirmPassword}
+                                            onChange={handleChange}
+                                            className="w-full border p-2 rounded bg-white"
+                                            placeholder="Confirm new password"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="flex gap-4 mt-6">
                             <button

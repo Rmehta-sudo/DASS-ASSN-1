@@ -25,60 +25,43 @@ const ResetRequest = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded shadow">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Request Password Reset</h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        For Club/Organizer Accounts
-                    </p>
-                </div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <div className="px-8 py-6 mt-4 text-left bg-white shadow-lg rounded-xl w-full max-w-md">
+                <h3 className="text-2xl font-bold text-center text-indigo-600">Request Password Reset</h3>
+                <p className="mt-2 text-center text-sm text-gray-600">For Club/Organizer Accounts</p>
 
-                {message && <div className="bg-green-100 text-green-700 p-3 rounded">{message}</div>}
-                {error && <div className="bg-red-100 text-red-700 p-3 rounded">{error}</div>}
+                {message && <div className="p-2 my-2 text-sm text-green-700 bg-green-100 rounded">{message}</div>}
+                {error && <div className="p-2 my-2 text-sm text-red-700 bg-red-100 rounded">{error}</div>}
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm -space-y-px">
-                        <div>
-                            <label htmlFor="email-address" className="sr-only">Club Email</label>
-                            <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Club Contact Email (e.g. music@clubs.iiit.ac.in)"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="reason" className="sr-only">Reason</label>
-                            <textarea
-                                id="reason"
-                                name="reason"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Reason for reset (e.g. Forgot password, New coordinator)"
-                                rows="3"
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                            />
-                        </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="mt-4">
+                        <label className="block" htmlFor="email">Club Email</label>
+                        <input
+                            type="email"
+                            placeholder="Club Contact Email"
+                            className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mt-4">
+                        <label className="block">Reason</label>
+                        <textarea
+                            placeholder="Reason for reset"
+                            className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                            rows="3"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            required
+                        />
                     </div>
 
-                    <div>
-                        <button
-                            type="submit"
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            Submit Request
-                        </button>
+                    <div className="flex items-baseline justify-between">
+                        <button className="px-6 py-2 mt-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-900 w-full">Submit Request</button>
                     </div>
-
-                    <div className="text-center">
-                        <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Back to Login</Link>
+                    <div className="mt-4 text-sm text-center">
+                        <Link to="/login" className="text-indigo-600 hover:underline">Back to Login</Link>
                     </div>
                 </form>
             </div>

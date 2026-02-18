@@ -53,7 +53,7 @@ const addClub = async (req, res) => {
 
         const user = await User.create({
             firstName: name,
-            lastName: '(Club)',
+            lastName: '',
             email,
             password,
             role: 'organizer',
@@ -236,23 +236,23 @@ const resetDatabase = async (req, res) => {
         const Event = require('../models/Event');
         const Registration = require('../models/Registration');
         await Event.deleteMany();
-        await Registration.deleteMany();
+        await Registration.deleteMany(); // Add Registration to imports if not already handled
         await PasswordReset.deleteMany();
 
         console.log('Database Cloud Cleared (Admin Preserved)...');
 
         // 2. Re-seed Clubs
         const clubs = [
-            { name: 'Music Club', category: 'Cultural', email: 'music@clubs.iiit.ac.in' },
-            { name: 'The Gaming Club', category: 'Technical', email: 'gaming@clubs.iiit.ac.in' },
-            { name: 'Decore', category: 'Cultural', email: 'decore@clubs.iiit.ac.in' },
-            { name: 'The Dance Crew', category: 'Cultural', email: 'dance@clubs.iiit.ac.in' },
-            { name: 'Cyclorama', category: 'Cultural', email: 'cyclorama@clubs.iiit.ac.in' },
-            { name: 'LitClub', category: 'Cultural', email: 'litclub@clubs.iiit.ac.in' },
-            { name: 'Pentaprism', category: 'Cultural', email: 'pentaprism@clubs.iiit.ac.in' },
-            { name: 'Hacking Club', category: 'Technical', email: 'hacking@clubs.iiit.ac.in' },
-            { name: 'Programming Club', category: 'Technical', email: 'programming@clubs.iiit.ac.in' },
-            { name: 'Amateur Sports Enthusiasts Club', category: 'Sports', email: 'sports@clubs.iiit.ac.in' },
+            { name: 'Music Club', category: 'Cultural', email: 'music@clubs.iiit.ac.in', desc: 'The official Music Club of IIIT Hyderabad.' },
+            { name: 'The Gaming Club', category: 'Technical', email: 'gaming@clubs.iiit.ac.in', desc: 'For gamers, by gamers. Lan parties and tournaments.' },
+            { name: 'Decore', category: 'Cultural', email: 'decore@clubs.iiit.ac.in', desc: 'Designing the campus, one event at a time.' },
+            { name: 'The Dance Crew', category: 'Cultural', email: 'dance@clubs.iiit.ac.in', desc: 'Expressing through movement and rhythm.' },
+            { name: 'Cyclorama', category: 'Cultural', email: 'cyclorama@clubs.iiit.ac.in', desc: 'Photography and filmmaking enthusiasts.' },
+            { name: 'LitClub', category: 'Cultural', email: 'litclub@clubs.iiit.ac.in', desc: 'For the love of literature and poetry.' },
+            { name: 'Pentaprism', category: 'Cultural', email: 'pentaprism@clubs.iiit.ac.in', desc: 'Capturing moments through the lens.' },
+            { name: 'Hacking Club', category: 'Technical', email: 'hacking@clubs.iiit.ac.in', desc: 'Cybersecurity and CTF competitions.' },
+            { name: 'Programming Club', category: 'Technical', email: 'programming@clubs.iiit.ac.in', desc: 'Competitive programming and algorithms.' },
+            { name: 'Amateur Sports Enthusiasts Club', category: 'Sports', email: 'sports@clubs.iiit.ac.in', desc: 'Promoting sports culture on campus.' },
         ];
 
         let createdClubs = [];
@@ -262,7 +262,7 @@ const resetDatabase = async (req, res) => {
 
             const user = await User.create({
                 firstName: club.name,
-                lastName: '(Club)',
+                lastName: '',
                 email: club.email,
                 password: password,
                 role: 'organizer',
@@ -274,71 +274,151 @@ const resetDatabase = async (req, res) => {
                 user: user._id,
                 name: club.name,
                 category: club.category,
-                description: `Official ${club.name} of IIIT Hyderabad. Join us for amazing events!`,
+                description: club.desc,
                 contactEmail: club.email
             });
-            createdClubs.push(organizer); // Push full organizer object
+            createdClubs.push(organizer);
         }
 
-        // 3. SEED EVENTS (2 per club)
+        // 3. Seed Users (Variety)
+        const userPool = [
+            { firstName: 'Alice', lastName: 'Cultural', email: 'alice@test.com', type: 'IIIT', interests: ['Cultural', 'Music', 'Dance'], followingIndices: [0, 3, 5] },
+            { firstName: 'Bob', lastName: 'Techie', email: 'bob@test.com', type: 'Node', interests: ['Technical', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] },
+            { firstName: 'Charlie', lastName: 'Sportsfan', email: 'charlie@test.com', type: 'IIIT', interests: ['Sports', 'health'], followingIndices: [9, 2] },
+            { firstName: 'David', lastName: 'General', email: 'david@test.com', type: 'Non-IIIT', interests: ['Technical', 'Art'], followingIndices: [8, 4] },
+            { firstName: 'Eve', lastName: 'Collector', email: 'eve@test.com', type: 'IIIT', interests: ['Cultural', 'Technical'], followingIndices: [0, 1, 6] },
+            { firstName: 'Frank', lastName: 'Newbie', email: 'frank@test.com', type: 'IIIT', interests: ['Music', 'Art'], followingIndices: [0, 5] },
+            { firstName: 'Rachit', lastName: 'Mehta', email: 'rachit.mehta@students.iiit.ac.in', type: 'IIIT', interests: ['Technical', 'Cultural', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] }
+        ];
+
+        for (const u of userPool) {
+            await User.create({
+                firstName: u.firstName,
+                lastName: u.lastName,
+                email: u.email,
+                password: u.email === 'rachit.mehta@students.iiit.ac.in' ? 'rm123' : 'password123',
+                role: 'participant',
+                contactNumber: '9876543210',
+                participantType: u.type,
+                interests: u.interests,
+                following: u.followingIndices.map(i => createdClubs[i]._id)
+            });
+        }
+
+        // 4. Seed Events (Comprehensive & Varied)
         console.log('Seeding Events...');
-        const locations = ['Amphitheatre', 'Himalaya 105', 'Himalaya 205', 'Library', 'Online', 'KRB Auditorium'];
+        const locations = ['Amphitheatre', 'Himalaya 105', 'Himalaya 205', 'Library', 'Online', 'KRB Auditorium', 'Felicity Ground'];
 
         for (const club of createdClubs) {
-            for (let i = 1; i <= 2; i++) {
-                const isMerch = (i === 2); // 2nd event is Merch
-                const type = isMerch ? 'Merchandise' : 'Normal';
+            const today = new Date();
 
-                // Distribute dates: Event 1 is soon, Event 2 is later
-                const today = new Date();
-                const startOffset = i * 5; // 5 days or 10 days from now
-                const startDate = new Date(today);
-                startDate.setDate(today.getDate() + startOffset);
+            // Event 1: PAST (Completed) - Normal
+            // ~20 days ago
+            const pastStart = new Date(today); pastStart.setDate(today.getDate() - 20);
+            const pastEnd = new Date(pastStart); pastEnd.setDate(pastStart.getDate() + 1);
+            const pastDeadline = new Date(pastStart); pastDeadline.setDate(pastStart.getDate() - 1);
 
-                const endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 1); // 1 day event
+            await Event.create({
+                organizer: club._id,
+                name: `${club.name} Intro Session`,
+                description: `First meetup of the semester for ${club.name}.`,
+                type: 'Normal',
+                eligibility: 'Everyone',
+                registrationFee: 0,
+                registrationLimit: 100,
+                startDate: pastStart,
+                endDate: pastEnd,
+                deadline: pastDeadline,
+                location: locations[Math.floor(Math.random() * locations.length)],
+                tags: [club.category, 'Intro', 'Freshers'],
+                status: 'Completed'
+            });
 
-                const deadline = new Date(startDate);
-                deadline.setDate(startDate.getDate() - 1); // Reg closes 1 day before
+            // Event 2: CURRENT (Ongoing or Published soon) - 50% Merch
+            const isMerch2 = Math.random() > 0.5;
+            // Starts yesterday, ends tomorrow (Ongoing)
+            const currStart = new Date(today); currStart.setDate(today.getDate() - 1);
+            const currEnd = new Date(today); currEnd.setDate(today.getDate() + 2);
+            const currDeadline = new Date(currEnd);
 
-                await Event.create({
-                    organizer: club._id,
-                    name: `${club.name} Event ${i}`,
-                    description: `This is ${type === 'Merchandise' ? 'an exclusive merchandise sale' : 'a verified event'} by ${club.name}. Join us!`,
-                    type: type,
-                    eligibility: 'Everyone',
-                    registrationFee: isMerch ? (i * 200) : (i * 50), // 50 or 400
-                    registrationLimit: 50 * i, // 50 or 100
-                    startDate: startDate,
-                    endDate: endDate,
-                    deadline: deadline,
-                    location: locations[Math.floor(Math.random() * locations.length)],
-                    tags: [club.category, type === 'Merchandise' ? 'Merch' : 'Fun'],
-                    formFields: [],
-                    merchandise: isMerch ? [
-                        { name: 'T-Shirt', price: 200, stock: 50 },
-                        { name: 'Sticker', price: 50, stock: 100 }
-                    ] : [],
-                    status: 'Published'
-                });
-            }
+            const type2 = isMerch2 ? 'Merchandise' : 'Normal';
+            const merchItems2 = isMerch2 ? [
+                { name: `${club.name} Tee`, price: 300, stock: 50 },
+                { name: 'Sticker Pack', price: 50, stock: 200 }
+            ] : [];
+
+            await Event.create({
+                organizer: club._id,
+                name: `${club.name} ${isMerch2 ? 'Merch Drop' : 'Workshop'}`,
+                description: `Happening now! Don't miss out on ${club.name}'s latest activity.`,
+                type: type2,
+                eligibility: 'Everyone',
+                registrationFee: isMerch2 ? 50 : 100,
+                registrationLimit: 200,
+                startDate: currStart,
+                endDate: currEnd,
+                deadline: currDeadline,
+                location: locations[Math.floor(Math.random() * locations.length)],
+                tags: [club.category, type2, 'Live'],
+                merchandise: merchItems2,
+                status: 'Ongoing'
+            });
+
+            // Event 3: FUTURE (Published) - 50% Merch
+            const isMerch3 = Math.random() > 0.5;
+            // 10 days from now
+            const futStart = new Date(today); futStart.setDate(today.getDate() + 10);
+            const futEnd = new Date(futStart); futEnd.setDate(futStart.getDate() + 1);
+            const futDeadline = new Date(futStart); futDeadline.setDate(futStart.getDate() - 2);
+
+            const type3 = isMerch3 ? 'Merchandise' : 'Normal';
+            const merchItems3 = isMerch3 ? [
+                { name: 'Hoodie', price: 600, stock: 20 },
+                { name: 'Mug', price: 150, stock: 30 },
+                { name: 'Cap', price: 200, stock: 40 }
+            ] : [];
+
+            await Event.create({
+                organizer: club._id,
+                name: `${club.name} ${isMerch3 ? 'Winter Collection' : 'Hackathon'}`,
+                description: `Upcoming major event by ${club.name}. Register now!`,
+                type: type3,
+                eligibility: 'IIIT Only',
+                registrationFee: isMerch3 ? 0 : 250,
+                registrationLimit: 150,
+                startDate: futStart,
+                endDate: futEnd,
+                deadline: futDeadline,
+                location: locations[Math.floor(Math.random() * locations.length)],
+                tags: [club.category, 'Big Event'],
+                merchandise: merchItems3,
+                status: 'Published'
+            });
+
+            // Event 4: VARIED (Draft or Cancelled)
+            const isCancelled = Math.random() > 0.5;
+            // 30 days from now
+            const draftStart = new Date(today); draftStart.setDate(today.getDate() + 30);
+
+            await Event.create({
+                organizer: club._id,
+                name: `${club.name} Secret Project`,
+                description: `For organizer eyes only (or cancelled plan).`,
+                type: 'Normal',
+                eligibility: 'Everyone',
+                registrationFee: 0,
+                registrationLimit: 50,
+                startDate: draftStart,
+                endDate: draftStart,
+                deadline: draftStart,
+                location: 'TBD',
+                tags: ['Planning'],
+                status: isCancelled ? 'Cancelled' : 'Draft'
+            });
         }
 
-        // 4. Create Specific User "Rachit Mehta"
-        const rachit = await User.create({
-            firstName: 'Rachit',
-            lastName: 'Mehta',
-            email: 'rachit.mehta@students.iiit.ac.in',
-            password: 'rm123',
-            role: 'participant',
-            contactNumber: '9372276184',
-            participantType: 'IIIT',
-            // Hardcoded interests and following as requested
-            interests: ['Technical', 'Cultural', 'Gaming', 'Coding'],
-            following: [createdClubs[1]._id, createdClubs[7]._id, createdClubs[8]._id] // Gaming, Hacking, Programming clubs
-        });
+        res.json({ message: 'Database Reset Successfully! Created 10 Clubs, 7 Users, & ~40 varied Events.' });
 
-        res.json({ message: 'Database Reset Successfully! Created Rachit, Clubs & 2 Events/Club.' });
     } catch (error) {
         console.error("Reset Error:", error);
         res.status(500).json({ message: error.message });
