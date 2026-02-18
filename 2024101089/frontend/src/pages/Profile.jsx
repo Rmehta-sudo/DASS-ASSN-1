@@ -23,11 +23,25 @@ const Profile = () => {
         confirmPassword: ''
     });
 
+    const [organizers, setOrganizers] = useState([]);
     const [editMode, setEditMode] = useState(false);
 
     useEffect(() => {
         fetchProfile();
+        fetchOrganizers();
     }, []);
+
+    const fetchOrganizers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await axios.get(`${API_URL}/admin/clubs`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setOrganizers(data);
+        } catch (error) {
+            console.error('Error fetching organizers:', error);
+        }
+    };
 
     const fetchProfile = async () => {
         try {
@@ -118,33 +132,25 @@ const Profile = () => {
         }
     };
 
-    const handleUnfollow = async (organizerId) => {
-        try {
-            // Optimistic update
-            const updatedFollowing = formData.following.filter(org => org._id !== organizerId);
-            setFormData(prev => ({ ...prev, following: updatedFollowing }));
+    const handleClubToggle = (clubId) => {
+        let updatedFollowing = [...formData.following];
+        // formData.following originally contains IDs (from fetchProfile -> data.following) if NOT populated.
+        // If it IS populated, we need to handle that. 
+        // Based on authController, it returns user.following which is [ObjectId].
+        // However, looking at the code I'm replacing, the previous code tried to access org.organizerName, implying it might have expected objects.
+        // But the user complained about blank cells, confirming it probably wasn't working as objects or keys were wrong.
+        // Let's assume user.following is array of IDs.
 
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
-            };
+        // Safety check: map to strings for comparison
+        const followingIds = updatedFollowing.map(f => typeof f === 'object' ? f._id : f);
 
-            // Should verify if API expects just IDs or objects. updatePreferences usually takes IDs.
-            // Following list from profile GET might be populated objects. 
-            // So we need to map to IDs for the PUT request if the backend expects IDs.
-
-            const followingIds = updatedFollowing.map(org => org._id);
-
-            await axios.put(`${API_URL}/auth/preferences`, { following: followingIds }, config);
-            toast.success("Unfollowed successfully");
-        } catch (error) {
-            console.error("Unfollow error:", error);
-            toast.error("Failed to unfollow");
-            fetchProfile(); // Revert on error
+        if (followingIds.includes(clubId)) {
+            updatedFollowing = followingIds.filter(id => id !== clubId);
+        } else {
+            updatedFollowing = [...followingIds, clubId];
         }
+
+        setFormData({ ...formData, following: updatedFollowing });
     };
 
     if (loading) return <div className="text-center mt-10">Loading...</div>;
@@ -252,49 +258,37 @@ const Profile = () => {
                 </div>
 
                 <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                        <h2 className="text-xl font-semibold">Following</h2>
-                        <Link to="/clubs" className="text-indigo-600 hover:underline text-sm font-medium">
-                            Browse Clubs to Follow &rarr;
-                        </Link>
-                    </div>
-                    {formData.following.length === 0 ? (
-                        <div className="text-center py-8 bg-gray-50 rounded border border-gray-100">
-                            <p className="text-gray-500 italic mb-2">You are not following any clubs yet.</p>
-                            <Link to="/clubs" className="inline-block bg-white text-indigo-600 border border-indigo-600 px-4 py-2 rounded hover:bg-indigo-50 transition">
-                                Browse Clubs
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {formData.following.map(org => (
-                                <div key={org._id || org} className="border p-4 rounded shadow-sm flex justify-between items-center bg-white transition hover:shadow-md">
+                    <h2 className="text-xl font-semibold mb-3">Following Clubs</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                        {organizers.map(org => {
+                            const isFollowing = formData.following.some(id => (typeof id === 'object' ? id._id : id) === org._id);
+                            return (
+                                <div
+                                    key={org._id}
+                                    onClick={() => editMode && handleClubToggle(org._id)}
+                                    className={`p-4 rounded-lg border cursor-pointer transition-all flex justify-between items-start
+                                        ${isFollowing
+                                            ? 'bg-indigo-50 border-indigo-500 shadow-sm'
+                                            : 'bg-white border-gray-200 hover:border-indigo-300'
+                                        }
+                                        ${!editMode ? 'cursor-default' : ''}
+                                    `}
+                                >
                                     <div>
-                                        <h4 className="font-semibold text-gray-800">
-                                            {typeof org === 'object' ? org.organizerName : 'Club ID: ' + org}
-                                        </h4>
-                                        {typeof org === 'object' && org.category && (
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded mt-1 inline-block">
-                                                {org.category}
-                                            </span>
-                                        )}
+                                        <h3 className="font-medium text-gray-900">{org.name}</h3>
+                                        <p className="text-xs text-gray-500 mt-1">{org.category}</p>
                                     </div>
-                                    {editMode && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnfollow(org._id || org)}
-                                            className="ml-2 text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full hover:bg-red-100 transition"
-                                            title="Unfollow"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    {isFollowing && (
+                                        <span className="text-indigo-600">
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
-                                        </button>
+                                        </span>
                                     )}
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {editMode && (

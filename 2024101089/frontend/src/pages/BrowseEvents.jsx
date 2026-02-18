@@ -12,7 +12,9 @@ const BrowseEvents = () => {
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
+    const [showRecommended, setShowRecommended] = useState(false);
 
     useEffect(() => {
         fetchEvents();
@@ -56,6 +58,34 @@ const BrowseEvents = () => {
         }
     };
 
+    const fetchRecommended = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const { data } = await axios.get(`${API_URL}/events/recommended`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setEvents(data);
+            setFilteredEvents(data);
+            setLoading(false);
+        } catch (error) {
+            console.error("Error fetching recommended events", error);
+            setLoading(false);
+            // Fallback to normal events if error (e.g. not logged in)
+            fetchEvents();
+        }
+    };
+
+    const toggleRecommended = () => {
+        if (!showRecommended) {
+            setShowRecommended(true);
+            fetchRecommended();
+        } else {
+            setShowRecommended(false);
+            fetchEvents();
+        }
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Hero Section */}
@@ -78,7 +108,17 @@ const BrowseEvents = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
 
-                <div className="flex gap-4 w-full md:w-auto">
+                <div className="flex gap-4 w-full md:w-auto items-center">
+                    <button
+                        onClick={toggleRecommended}
+                        className={`px-4 py-2 rounded-lg border transition-all ${showRecommended
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                            : 'bg-white/50 border-gray-200 text-gray-700 hover:border-indigo-300'
+                            }`}
+                    >
+                        ✨ For You
+                    </button>
+
                     <select
                         className="px-4 py-2 rounded-lg border border-gray-200 bg-white/50 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500"
                         value={statusFilter}

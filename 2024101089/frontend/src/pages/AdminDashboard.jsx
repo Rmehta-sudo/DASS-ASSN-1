@@ -129,7 +129,7 @@ const AdminDashboard = () => {
                         <h1 className="text-xl font-bold">Felicity Admin</h1>
                         <div className="flex items-center space-x-4">
                             <span>Welcome, Admin</span>
-                            <button onClick={handleResetDatabase} className="bg-orange-500 hover:bg-orange-600 px-3 py-1 rounded text-sm font-bold border border-orange-700 shadow-sm animate-pulse">
+                            <button onClick={handleResetDatabase} className="bg-orange-500 hover:bg-orange-600 px-3 py-1 rounded text-sm font-bold border border-orange-700 shadow-sm">
                                 ⚠ Reset DB
                             </button>
                             <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
