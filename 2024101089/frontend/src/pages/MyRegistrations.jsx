@@ -13,6 +13,39 @@ const MyRegistrations = () => {
         fetchRegistrations();
     }, []);
 
+    // Feedback State
+    const [feedbackModal, setFeedbackModal] = useState({ open: false, eventId: null, eventName: '' });
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState('');
+    const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+    const openFeedbackModal = (reg) => {
+        setFeedbackModal({ open: true, eventId: reg.event?._id, eventName: reg.event?.name });
+        setRating(5);
+        setComment('');
+    };
+
+    const submitFeedback = async (e) => {
+        e.preventDefault();
+        setSubmittingFeedback(true);
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            await axios.post(`${API_URL}/feedback`, {
+                eventId: feedbackModal.eventId,
+                rating,
+                comment
+            }, config);
+            alert('Feedback submitted successfully!');
+            setFeedbackModal({ open: false, eventId: null, eventName: '' });
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data?.message || 'Failed to submit feedback');
+        } finally {
+            setSubmittingFeedback(false);
+        }
+    };
+
     const fetchRegistrations = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -218,6 +251,58 @@ const MyRegistrations = () => {
                     </div>
                 )}
             </div>
+            {/* Feedback Modal */}
+            {feedbackModal.open && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={() => setFeedbackModal({ open: false, eventId: null, eventName: '' })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            &times;
+                        </button>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Rate Event</h3>
+                        <p className="text-gray-500 text-sm mb-6">How was {feedbackModal.eventName}?</p>
+
+                        <form onSubmit={submitFeedback} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                                <div className="flex gap-2 text-2xl">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setRating(star)}
+                                            className={`transition-transform hover:scale-110 ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                        >
+                                            ★
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Comments (Anonymous)</label>
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                    rows="3"
+                                    placeholder="Share your experience..."
+                                ></textarea>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={submittingFeedback}
+                                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                            >
+                                {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
