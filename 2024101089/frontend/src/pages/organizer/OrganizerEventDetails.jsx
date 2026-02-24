@@ -101,7 +101,7 @@ const OrganizerEventDetails = () => {
                                     event.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                                     }`}>{event.status}</span>
                                 <span className="text-gray-500 text-sm flex items-center">
-                                    📅 {new Date(event.startDate).toLocaleDateString('en-GB')}
+                                     {new Date(event.startDate).toLocaleDateString('en-GB')}
                                 </span>
                             </div>
                         </div>
@@ -222,7 +222,7 @@ const OrganizerEventDetails = () => {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
-                                    <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                                    <span className="absolute left-3 top-2.5 text-gray-400"></span>
                                 </div>
                                 <select
                                     className="border rounded-md px-3 py-2 bg-white"
@@ -271,7 +271,7 @@ const OrganizerEventDetails = () => {
                                                                             rel="noreferrer"
                                                                             className="text-indigo-600 underline hover:text-indigo-800"
                                                                         >
-                                                                            📎 {r.answer.split('/').pop()}
+                                                                             {r.answer.split('/').pop()}
                                                                         </a>
                                                                     ) : Array.isArray(r.answer) ? (
                                                                         <span className="text-gray-800">{r.answer.join(', ')}</span>
@@ -283,6 +283,30 @@ const OrganizerEventDetails = () => {
                                                         </div>
                                                     ) : (
                                                         <span className="text-xs text-gray-400">—</span>
+                                                    )}
+                                                    {reg.paymentProof && (
+                                                        <div className="mt-2 text-xs border-t pt-2">
+                                                            <span className="font-medium text-indigo-800">Payment Proof: </span>
+                                                            {reg.paymentProof.startsWith('/api/uploads/') ? (
+                                                                <a
+                                                                    href={`${API_URL.replace('/api', '')}${reg.paymentProof}?token=${localStorage.getItem('token')}`}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="text-indigo-600 underline hover:text-indigo-800"
+                                                                >
+                                                                     View File
+                                                                </a>
+                                                            ) : (
+                                                                <a
+                                                                    href={reg.paymentProof}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="text-indigo-600 underline hover:text-indigo-800"
+                                                                >
+                                                                    🔗 View Link
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </td>
 
@@ -316,7 +340,7 @@ const OrganizerEventDetails = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

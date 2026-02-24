@@ -36,9 +36,12 @@ router.get('/:filename', protect, async (req, res) => {
 
         const fileUrl = `/api/uploads/${filename}`;
 
-        // Find the registration that contains this file URL in its responses
+        // Find the registration that contains this file URL in its responses or as paymentProof
         const registration = await Registration.findOne({
-            'responses.answer': fileUrl
+            $or: [
+                { 'responses.answer': fileUrl },
+                { paymentProof: fileUrl }
+            ]
         }).populate('event');
 
         // If no registration found, deny access (fail closed — never expose files not tied to a registration)

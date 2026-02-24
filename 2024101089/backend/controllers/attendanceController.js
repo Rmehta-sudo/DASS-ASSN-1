@@ -44,6 +44,49 @@ const markAttendance = async (req, res) => {
     }
 };
 
+// @desc    Manually override and mark attendance via Ticket ID
+// @route   POST /api/attendance/manual
+// @access  Private/Organizer
+const manualOverride = async (req, res) => {
+    const { ticketId, reason } = req.body;
+
+    if (!reason || String(reason).trim() === '') {
+        return res.status(400).json({ message: 'A reason must be provided for manual override' });
+    }
+
+    try {
+        const registration = await Registration.findOne({ ticketId })
+            .populate('user', 'firstName lastName email collegeName')
+            .populate('event', 'name organizer');
+
+        if (!registration) {
+            return res.status(404).json({ message: 'Invalid Ticket ID' });
+        }
+
+        if (registration.attended) {
+            return res.status(400).json({
+                message: 'Already Marked Present'
+            });
+        }
+
+        registration.attended = true;
+        registration.auditLog.push({
+            action: 'MANUAL_OVERRIDE',
+            reason: reason
+        });
+        await registration.save();
+
+        res.json({
+            message: 'Manual Override Successful',
+            user: registration.user,
+            event: registration.event
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get attendance statistics for an event
 // @route   GET /api/attendance/stats/:eventId
 // @access  Private/Organizer
@@ -107,4 +150,4 @@ const exportAttendance = async (req, res) => {
     }
 };
 
-module.exports = { markAttendance, getAttendanceStats, exportAttendance };
+module.exports = { markAttendance, getAttendanceStats, exportAttendance, manualOverride };

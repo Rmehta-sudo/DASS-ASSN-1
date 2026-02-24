@@ -19,6 +19,12 @@ const MyRegistrations = () => {
     const [comment, setComment] = useState('');
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
+    // Upload Modal State
+    const [uploadModal, setUploadModal] = useState({ open: false, regId: null });
+    const [uploadFile, setUploadFile] = useState(null);
+    const [uploadUrl, setUploadUrl] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+
     const openFeedbackModal = (reg) => {
         setFeedbackModal({ open: true, eventId: reg.event?._id, eventName: reg.event?.name });
         setRating(5);
@@ -61,21 +67,52 @@ const MyRegistrations = () => {
         }
     };
 
-    const handleUploadClick = async (regId) => {
-        const url = prompt("Enter Payment Proof URL (e.g., Google Drive link):");
-        if (url) {
-            try {
-                const token = localStorage.getItem('token');
-                await axios.put(`${API_URL}/registrations/${regId}/payment`, {
-                    paymentProof: url
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
+    const openUploadModal = (regId) => {
+        setUploadModal({ open: true, regId });
+        setUploadFile(null);
+        setUploadUrl('');
+    };
+
+    const handleUploadSubmit = async (e) => {
+        e.preventDefault();
+        if (!uploadFile && !uploadUrl) {
+            alert("Please select a file or enter a URL");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            let finalUrl = uploadUrl;
+
+            // If file selected, upload it first
+            if (uploadFile) {
+                const formData = new FormData();
+                formData.append('file', uploadFile);
+                const uploadRes = await axios.post(`${API_URL}/uploads`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${token}`
+                    }
                 });
-                alert("Proof uploaded successfully!");
-                fetchRegistrations();
-            } catch (error) {
-                alert("Error uploading proof: " + (error.response?.data?.message || error.message));
+                finalUrl = uploadRes.data.url;
             }
+
+            // Submit proof
+            await axios.put(`${API_URL}/registrations/${uploadModal.regId}/payment`, {
+                paymentProof: finalUrl
+            }, config);
+
+            alert("Proof uploaded successfully!");
+            setUploadModal({ open: false, regId: null });
+            fetchRegistrations();
+        } catch (error) {
+            console.error(error);
+            alert("Error uploading proof: " + (error.response?.data?.message || error.message));
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -233,7 +270,7 @@ const MyRegistrations = () => {
                                     {reg.status === 'Pending' && (
                                         <div className="mt-4">
                                             <button
-                                                onClick={() => handleUploadClick(reg._id)}
+                                                onClick={() => openUploadModal(reg._id)}
                                                 className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
                                             >
                                                 Upload Payment Proof
@@ -319,6 +356,68 @@ const MyRegistrations = () => {
                                 className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
                             >
                                 {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Upload Proof Modal */}
+            {uploadModal.open && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+                        <button
+                            onClick={() => setUploadModal({ open: false, regId: null })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                            &times;
+                        </button>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Payment Proof</h3>
+                        <p className="text-gray-500 text-sm mb-6">Provide a link or upload an image.</p>
+
+                        <form onSubmit={handleUploadSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Image Upload</label>
+                                <input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    onChange={(e) => {
+                                        setUploadFile(e.target.files[0]);
+                                        setUploadUrl('');
+                                    }}
+                                    className="block w-full text-sm text-gray-500
+                                        file:mr-4 file:py-2 file:px-4
+                                        file:rounded-full file:border-0
+                                        file:text-sm file:font-semibold
+                                        file:bg-indigo-50 file:text-indigo-700
+                                        hover:file:bg-indigo-100"
+                                    disabled={!!uploadUrl}
+                                />
+                            </div>
+
+                            <div className="text-center text-sm text-gray-400 font-medium">OR</div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Link URL</label>
+                                <input
+                                    type="url"
+                                    value={uploadUrl}
+                                    onChange={(e) => {
+                                        setUploadUrl(e.target.value);
+                                        setUploadFile(null);
+                                    }}
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 border"
+                                    placeholder="https://"
+                                    disabled={!!uploadFile}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isUploading || (!uploadFile && !uploadUrl)}
+                                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                            >
+                                {isUploading ? 'Uploading...' : 'Submit Proof'}
                             </button>
                         </form>
                     </div>

@@ -295,7 +295,7 @@ const EventEdit = () => {
                                 />
                                 {registrationCount === 0 && eventData.status !== 'Draft' && (
                                     <p className="mt-2 text-xs text-amber-600">
-                                        ⚠️ Form will be locked once the first registration is received.
+                                         Form will be locked once the first registration is received.
                                     </p>
                                 )}
                             </div>

@@ -124,6 +124,14 @@ io.on('connection', (socket) => {
             // Broadcast to room
             io.to(room).emit('receive_message', msg);
 
+            // New: Emit system notification to the room (excluding sender) 
+            // This is for the live notification system for new messages
+            socket.to(room).emit('receive_notification', {
+                message: `New message from ${msg.sender.firstName}: "${content.substring(0, 30)}..."`,
+                type: 'system',
+                relatedId: objectId
+            });
+
             // --- Notification Logic ---
             // 1. Reply Notification
             if (parentMessage) {

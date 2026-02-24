@@ -3,6 +3,7 @@ const Organizer = require('../models/Organizer');
 const PasswordReset = require('../models/PasswordReset');
 const bcrypt = require('bcryptjs');
 const generateToken = require('../utils/generateToken');
+const sendEmail = require('../utils/sendEmail');
 
 // @desc    Get all organizers/clubs
 // @route   GET /api/admin/clubs
@@ -153,6 +154,16 @@ const processResetRequest = async (req, res) => {
         } else {
             request.status = 'Rejected';
             request.adminComment = adminComment;
+
+            try {
+                await sendEmail({
+                    email: request.email,
+                    subject: 'Password Reset Request Rejected',
+                    message: `Your password reset request has been rejected by the administrator.\n\nReason: ${adminComment || 'No reason provided.'}`
+                });
+            } catch (emailErr) {
+                console.error("Failed to send password rejection email:", emailErr);
+            }
         }
 
         await request.save();

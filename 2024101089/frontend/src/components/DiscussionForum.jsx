@@ -178,7 +178,7 @@ const DiscussionForum = ({ eventId, user, isOrganizer }) => {
 
                     {/* Reactions */}
                     <div className="flex gap-1">
-                        <button onClick={() => handleReact(msg._id, '❤️')} className="hover:scale-125 transition-transform text-xs">❤️</button>
+                        <button onClick={() => handleReact(msg._id, '')} className="hover:scale-125 transition-transform text-xs"></button>
                         <button onClick={() => handleReact(msg._id, '👍')} className="hover:scale-125 transition-transform text-xs">👍</button>
                     </div>
 

@@ -45,7 +45,14 @@ const registrationSchema = mongoose.Schema({
     attended: {
         type: Boolean,
         default: false
-    }
+    },
+
+    // Audit Log for manual overrides
+    auditLog: [{
+        action: String,
+        date: { type: Date, default: Date.now },
+        reason: String
+    }]
 
 }, {
     timestamps: true,

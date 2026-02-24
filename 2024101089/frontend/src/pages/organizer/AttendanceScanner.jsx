@@ -10,10 +10,32 @@ const AttendanceScanner = () => {
     const [scannedData, setScannedData] = useState(null);
     const navigate = useNavigate();
 
-    const handleScan = async (e) => {
-        e.preventDefault();
+    const [stats, setStats] = useState({ totalRegistrations: 0, attendedCount: 0 });
+    const [overrideMode, setOverrideMode] = useState(false);
+    const [overrideReason, setOverrideReason] = useState('');
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
+    const fetchStats = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            // Assuming the event ID is available or we show an aggregate? 
+            // The route says /api/attendance/stats/:eventId.
+            // Wait, the scanner does not take an event ID until it scans. 
+            // The stats require an eventId. Actually, organizers can have multiple events. Let's just catch it.
+        } catch (e) { }
+    };
+
+    const clearStatus = () => {
         setStatus('');
         setMessage('');
+    };
+
+    const handleScan = async (e) => {
+        e.preventDefault();
+        clearStatus();
         setScannedData(null);
 
         try {
@@ -23,15 +45,60 @@ const AttendanceScanner = () => {
             }, { headers: { Authorization: `Bearer ${token}` } });
 
             setStatus('success');
+            setTimeout(clearStatus, 5000);
             setMessage(data.message);
             setScannedData(data);
             setTicketId(''); // Clear for next scan
+
+            // Try updating stats if event was populated
+            if (data.event && data.event._id) {
+                try {
+                    const token = localStorage.getItem('token');
+                    const statsData = await axios.get(`${API_URL}/attendance/stats/${data.event._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    setStats(statsData.data);
+                } catch (e) { }
+            }
+
         } catch (err) {
             setStatus('error');
+            setTimeout(clearStatus, 5000);
             setMessage(err.response?.data?.message || err.message);
             if (err.response?.data?.error) {
                 setMessage(`${err.response.data.message}: ${err.response.data.error}`);
             }
+        }
+    };
+
+    const handleOverride = async (e) => {
+        e.preventDefault();
+        clearStatus();
+        setScannedData(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await axios.post(`${API_URL}/attendance/manual`, {
+                ticketId,
+                reason: overrideReason
+            }, { headers: { Authorization: `Bearer ${token}` } });
+
+            setStatus('success');
+            setTimeout(clearStatus, 5000);
+            setMessage(data.message);
+            setScannedData(data);
+            setTicketId('');
+            setOverrideReason('');
+            setOverrideMode(false);
+
+            if (data.event && data.event._id) {
+                try {
+                    const statsData = await axios.get(`${API_URL}/attendance/stats/${data.event._id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    setStats(statsData.data);
+                } catch (e) { }
+            }
+        } catch (err) {
+            setStatus('error');
+            setTimeout(clearStatus, 5000);
+            setMessage(err.response?.data?.message || err.message);
         }
     };
 
@@ -46,9 +113,26 @@ const AttendanceScanner = () => {
                 </div>
 
                 <div className="p-6">
-                    <form onSubmit={handleScan} className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Scan Ticket (Enter ID)</label>
-                        <div className="flex">
+                    {stats.totalRegistrations > 0 && (
+                        <div className="mb-6 bg-indigo-50 p-4 rounded-lg flex justify-between items-center shadow-sm">
+                            <div>
+                                <p className="text-sm text-indigo-800 font-semibold mb-1">Live Dashboard</p>
+                                <p className="text-2xl font-bold text-indigo-900">
+                                    {stats.attendedCount} <span className="text-base font-normal text-indigo-600">/ {stats.totalRegistrations}</span>
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-indigo-600 uppercase font-bold tracking-wide">Scanned</p>
+                                <p className="text-sm text-indigo-800 font-medium">{stats.totalRegistrations - stats.attendedCount} remaining</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <form onSubmit={overrideMode ? handleOverride : handleScan} className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {overrideMode ? 'Manual Override Ticket' : 'Scan Ticket (Enter ID)'}
+                        </label>
+                        <div className="flex mb-2">
                             <input
                                 type="text"
                                 value={ticketId}
@@ -57,10 +141,23 @@ const AttendanceScanner = () => {
                                 className="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm p-3 font-mono text-lg uppercase"
                                 autoFocus
                             />
-                            <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700">
-                                Verify
+                            <button type="submit" className={`text-white px-4 py-2 rounded-r-md ${overrideMode ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+                                {overrideMode ? 'Override' : 'Verify'}
                             </button>
                         </div>
+                        {overrideMode && (
+                            <input
+                                type="text"
+                                value={overrideReason}
+                                onChange={(e) => setOverrideReason(e.target.value)}
+                                placeholder="Reason for override..."
+                                className="w-full border border-gray-300 rounded-md shadow-sm p-2 mb-2"
+                                required
+                            />
+                        )}
+                        <button type="button" onClick={() => setOverrideMode(!overrideMode)} className="text-sm text-gray-500 hover:text-gray-700 underline">
+                            {overrideMode ? 'Switch to Normal Scan' : 'Needs Manual Override?'}
+                        </button>
                     </form>
 
                     {/* Status Display */}

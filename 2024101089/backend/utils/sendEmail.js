@@ -3,9 +3,9 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
     // Check if email credentials exist
     if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-        console.log('⚠️  Email credentials not found in .env. Skipping email sending.');
-        console.log('📧  Would have sent email to:', options.email);
-        console.log('📝  Subject:', options.subject);
+        console.log('[WARN] Email credentials not found in .env. Skipping email sending.');
+        console.log('[MOCK] Would have sent email to:', options.email);
+        console.log('[MOCK] Subject:', options.subject);
         return;
     }
 
