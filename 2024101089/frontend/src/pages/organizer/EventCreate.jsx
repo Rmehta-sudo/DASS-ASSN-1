@@ -91,6 +91,15 @@ const EventCreate = () => {
                                 </select>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Eligibility</label>
+                                <select name="eligibility" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    value={eventData.eligibility} onChange={handleChange}>
+                                    <option value="Anyone">Open to All</option>
+                                    <option value="IIIT Only">IIIT Students Only</option>
+                                </select>
+                            </div>
+
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Description</label>
                                 <textarea name="description" rows="3" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
@@ -112,14 +121,20 @@ const EventCreate = () => {
 
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                                <input type="datetime-local" name="startDate" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                <label className="block text-sm font-medium text-gray-700">Start Date & Time</label>
+                                <input type="datetime-local" name="startDate" required lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     value={eventData.startDate} onChange={handleChange} />
                             </div>
 
                             <div>
+                                <label className="block text-sm font-medium text-gray-700">End Date & Time</label>
+                                <input type="datetime-local" name="endDate" required lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    value={eventData.endDate} onChange={handleChange} />
+                            </div>
+
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
-                                <input type="datetime-local" name="deadline" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                <input type="datetime-local" name="deadline" required lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     value={eventData.deadline} onChange={handleChange} />
                             </div>
 

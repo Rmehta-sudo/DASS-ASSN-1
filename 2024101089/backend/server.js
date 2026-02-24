@@ -64,6 +64,7 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const Notification = require('./models/Notification'); // Import Notification Model
 
 app.use('/api/auth', authRoutes);
@@ -75,6 +76,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Make io accessible to our router
 app.set('io', io);

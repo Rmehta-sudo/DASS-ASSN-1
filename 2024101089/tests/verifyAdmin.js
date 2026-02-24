@@ -30,7 +30,7 @@ async function runTest() {
         },
         body: JSON.stringify({
             name: `Test Club Archive ${Date.now()}`,
-            category: 'Other',
+            category: 'Clubs',
             email: testClubEmail,
             description: 'Test Description'
         })

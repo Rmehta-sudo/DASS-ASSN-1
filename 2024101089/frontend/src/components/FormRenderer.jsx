@@ -1,7 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { API_URL } from '../apiConfig';
 
 const FormRenderer = ({ formFields, onResponseChange, responses }) => {
+    const [uploading, setUploading] = useState({});
+
     if (!formFields || formFields.length === 0) return null;
+
+    const handleFileUpload = async (label, file) => {
+        if (!file) return;
+        setUploading(prev => ({ ...prev, [label]: true }));
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('file', file);
+            const { data } = await axios.post(`${API_URL}/upload`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            // Store the URL as the answer
+            onResponseChange(label, data.url);
+        } catch (err) {
+            alert('Upload failed: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setUploading(prev => ({ ...prev, [label]: false }));
+        }
+    };
 
     return (
         <div className="border p-4 rounded-xl bg-gray-50 mt-4">
@@ -73,21 +99,28 @@ const FormRenderer = ({ formFields, onResponseChange, responses }) => {
                         )}
 
                         {field.type === 'file' && (
-                            <input
-                                type="file"
-                                className="block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-full file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-indigo-50 file:text-indigo-700
-                                hover:file:bg-indigo-100"
-                                onChange={(e) => {
-                                    // For now just storing file name or file object
-                                    // In a real app, this would upload to server/S3 and get URL
-                                    onResponseChange(field.label, e.target.files[0]?.name || '');
-                                }}
-                                required={field.required}
-                            />
+                            <div>
+                                <input
+                                    type="file"
+                                    className="block w-full text-sm text-gray-500
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-full file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-indigo-50 file:text-indigo-700
+                                    hover:file:bg-indigo-100"
+                                    onChange={(e) => handleFileUpload(field.label, e.target.files[0])}
+                                    required={field.required && !responses[field.label]}
+                                    disabled={uploading[field.label]}
+                                />
+                                {uploading[field.label] && (
+                                    <p className="text-xs text-indigo-600 mt-1 animate-pulse">Uploading...</p>
+                                )}
+                                {responses[field.label] && !uploading[field.label] && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                        ✓ Uploaded: <a href={`${API_URL.replace('/api', '')}${responses[field.label]}?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" className="underline">{responses[field.label].split('/').pop()}</a>
+                                    </p>
+                                )}
+                            </div>
                         )}
                     </div>
                 ))}

@@ -273,7 +273,7 @@ const OrganizerDashboard = () => {
                                             event.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
                                             }`}>{event.status}</span>
                                     </div>
-                                    <p className="text-gray-400 text-xs font-medium">{new Date(event.startDate).toLocaleDateString()}</p>
+                                    <p className="text-gray-400 text-xs font-medium">{new Date(event.startDate).toLocaleDateString('en-GB')}</p>
                                 </div>
                                 <div className="p-5 flex-1">
                                     <div className="flex justify-between items-center mb-2">
@@ -384,7 +384,7 @@ const OrganizerDashboard = () => {
                                                     <p><span className="font-medium text-gray-500 w-16 inline-block">Email:</span> {reg.user?.email}</p>
                                                     <p><span className="font-medium text-gray-500 w-16 inline-block">Phone:</span> {reg.user?.contactNumber || 'N/A'}</p>
                                                     {reg.ticketId && <p><span className="font-medium text-gray-500 w-16 inline-block">Ticket:</span> <span className="font-mono text-gray-800">{reg.ticketId}</span></p>}
-                                                    <p><span className="font-medium text-gray-500 w-16 inline-block">Date:</span> {new Date(reg.createdAt).toLocaleDateString()}</p>
+                                                    <p><span className="font-medium text-gray-500 w-16 inline-block">Date:</span> {new Date(reg.createdAt).toLocaleDateString('en-GB')}</p>
                                                 </div>
 
                                                 {reg.merchandiseSelection && reg.merchandiseSelection.length > 0 && (
@@ -526,7 +526,7 @@ const OrganizerDashboard = () => {
                                                             <div className="flex text-yellow-500 text-sm">
                                                                 Rating: {comment.rating}/5
                                                             </div>
-                                                            <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                            <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString('en-GB')}</span>
                                                         </div>
                                                         <p className="text-gray-700 italic">"{comment.text}"</p>
                                                     </div>

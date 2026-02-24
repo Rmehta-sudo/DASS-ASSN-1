@@ -110,7 +110,7 @@ const FeedbackForm = ({ eventId, registrationStatus, eventEndDate }) => {
                         <div className="flex justify-between items-start">
                             <div className="flex items-center">
                                 <span className="text-yellow-500 font-bold mr-2">Rating: {rev.rating}/5</span>
-                                <span className="text-gray-400 text-xs">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                                <span className="text-gray-400 text-xs">{new Date(rev.createdAt).toLocaleDateString('en-GB')}</span>
                             </div>
                         </div>
                         <p className="text-gray-700 mt-2 text-sm">{rev.comment}</p>

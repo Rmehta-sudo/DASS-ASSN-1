@@ -85,22 +85,30 @@ const MyRegistrations = () => {
             const event = reg.event;
             if (!event) return false;
 
-            // Check status first for Cancelled/Rejected
+            const isRegCancelled = reg.status === 'Cancelled' || reg.status === 'Rejected';
+            const isEventCancelled = event.status === 'Cancelled';
+
+            // Cancelled tab: show cancelled/rejected registrations OR events marked Cancelled
             if (activeTab === 'Cancelled') {
-                return reg.status === 'Cancelled' || reg.status === 'Rejected';
+                return isRegCancelled || isEventCancelled;
             }
 
-            // Exclude cancelled/rejected from other tabs
-            if (reg.status === 'Cancelled' || reg.status === 'Rejected') return false;
+            // Exclude cancelled/rejected from all other tabs
+            if (isRegCancelled || isEventCancelled) return false;
 
-            const isPast = event.endDate ? new Date(event.endDate) < now : new Date(event.startDate) < now;
+            // Completed tab: show events the organiser explicitly marked Completed,
+            // OR events whose end date is in the past (time-based completion)
+            const isPast = event.endDate
+                ? new Date(event.endDate) < now
+                : new Date(event.startDate) < now;
+            const isEventCompleted = event.status === 'Completed' || isPast;
 
             if (activeTab === 'Completed') {
-                return isPast;
+                return isEventCompleted;
             }
 
-            // Normal & Merchandise (Upcoming/Ongoing)
-            if (isPast) return false;
+            // Normal & Merchandise tabs — only show upcoming/ongoing (not yet completed)
+            if (isEventCompleted) return false;
 
             if (activeTab === 'Merchandise') {
                 return event.type === 'Merchandise';
@@ -238,7 +246,7 @@ const MyRegistrations = () => {
                                     <div className="text-right">
                                         <p className="text-xs text-gray-500 font-semibold uppercase">Date</p>
                                         <p className="text-gray-800 font-medium">
-                                            {reg.event?.startDate ? new Date(reg.event.startDate).toLocaleDateString() : 'TBA'}
+                                            {reg.event?.startDate ? new Date(reg.event.startDate).toLocaleDateString('en-GB') : 'TBA'}
                                         </p>
                                     </div>
 

@@ -30,7 +30,7 @@ const testAdmin = async () => {
         console.log("\n3. Adding New Club...");
         const newClub = {
             name: "Test Club " + Date.now(),
-            category: "Technical",
+            category: "Clubs",
             email: `testclub${Date.now()}@clubs.iiit.ac.in`,
             description: "A test club for automation"
         };

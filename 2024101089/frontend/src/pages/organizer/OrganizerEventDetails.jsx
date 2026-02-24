@@ -101,7 +101,7 @@ const OrganizerEventDetails = () => {
                                     event.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                                     }`}>{event.status}</span>
                                 <span className="text-gray-500 text-sm flex items-center">
-                                    📅 {new Date(event.startDate).toLocaleDateString()}
+                                    📅 {new Date(event.startDate).toLocaleDateString('en-GB')}
                                 </span>
                             </div>
                         </div>
@@ -242,7 +242,7 @@ const OrganizerEventDetails = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticket ID</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Form Responses</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         </tr>
                                     </thead>
@@ -252,11 +252,38 @@ const OrganizerEventDetails = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{reg.ticketId || '-'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-medium text-gray-900">{reg.user?.firstName} {reg.user?.lastName}</div>
-                                                    <div className="text-xs text-gray-500">Reg: {new Date(reg.createdAt).toLocaleDateString()}</div>
+                                                    <div className="text-xs text-gray-500">Reg: {new Date(reg.createdAt).toLocaleDateString('en-GB')}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-900">{reg.user?.email}</div>
                                                     <div className="text-xs text-gray-500">{reg.user?.contactNumber}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {reg.responses && reg.responses.length > 0 ? (
+                                                        <div className="space-y-1 max-w-xs">
+                                                            {reg.responses.map((r, i) => (
+                                                                <div key={i} className="text-xs">
+                                                                    <span className="font-medium text-gray-600">{r.label}:</span>{' '}
+                                                                    {typeof r.answer === 'string' && r.answer.startsWith('/api/uploads/') ? (
+                                                                        <a
+                                                                            href={`${API_URL.replace('/api', '')}${r.answer}?token=${localStorage.getItem('token')}`}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="text-indigo-600 underline hover:text-indigo-800"
+                                                                        >
+                                                                            📎 {r.answer.split('/').pop()}
+                                                                        </a>
+                                                                    ) : Array.isArray(r.answer) ? (
+                                                                        <span className="text-gray-800">{r.answer.join(', ')}</span>
+                                                                    ) : (
+                                                                        <span className="text-gray-800">{r.answer || '—'}</span>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">—</span>
+                                                    )}
                                                 </td>
 
                                                 <td className="px-6 py-4 whitespace-nowrap">

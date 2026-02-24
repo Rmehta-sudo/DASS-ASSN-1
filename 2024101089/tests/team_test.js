@@ -23,7 +23,7 @@ const testTeamFlow = async () => {
         const validOrgEmail = `org${Date.now()}@clubs.iiit.ac.in`;
         // Register org first to be sure
         await axios.post(`${API_URL}/auth/signup-organizer`, {
-            name: "HackClub", category: "Technical", email: validOrgEmail, description: "Test"
+            name: "HackClub", category: "Clubs", email: validOrgEmail, description: "Test"
         }).catch(err => { }); // If fails, might be admin only restriction, let's try direct admin creation or just use known admin creds to creating org?
 
         // Actually, let's use the Admin to Create the Organizer properly as per flow
@@ -31,7 +31,7 @@ const testTeamFlow = async () => {
         const adminToken = adminLogin.data.token;
 
         await axios.post(`${API_URL}/admin/clubs`, {
-            name: "HackClub Test " + Date.now(), category: "Technical", email: validOrgEmail, description: "Test Club"
+            name: "HackClub Test " + Date.now(), category: "Clubs", email: validOrgEmail, description: "Test Club"
         }, { headers: { Authorization: `Bearer ${adminToken}` } });
 
         // Password for created club is 'password123'

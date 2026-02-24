@@ -13,7 +13,7 @@ const organizerSchema = mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['Cultural', 'Technical', 'Sports', 'Other'],
+        enum: ['Clubs', 'Councils', 'Fest Teams'],
         required: true
     },
     description: {

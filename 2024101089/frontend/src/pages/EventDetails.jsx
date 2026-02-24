@@ -149,7 +149,24 @@ const EventDetails = () => {
     if (loading) return <div className="flex bg-white h-screen items-center justify-center">Loading...</div>;
     if (!event) return <div className="text-center mt-20">Event not found</div>;
 
-    const isEnded = new Date() > new Date(event.endDate);
+    // Only mark as ended if endDate is actually set AND is past end-of-day (guard against null → epoch bug)
+    const endOfDay = (dateStr) => { const d = new Date(dateStr); d.setHours(23, 59, 59, 999); return d; };
+    const isEnded = event.endDate ? new Date() > endOfDay(event.endDate) : false;
+    const isDeadlinePassed = event.deadline ? new Date() > new Date(event.deadline) : false;
+    const isFull = event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit;
+
+    // For Merchandise events: all items are out of stock → block purchase
+    const isStockExhausted =
+        event.type === 'Merchandise' &&
+        event.merchandise &&
+        event.merchandise.length > 0 &&
+        event.merchandise.every(item => item.stock <= 0);
+
+    // Event-level status blocks
+    const isEventCompleted = event.status === 'Completed';
+    const isEventCancelled = event.status === 'Cancelled';
+
+    const cannotRegister = isEnded || isDeadlinePassed || isFull || isStockExhausted || isEventCompleted || isEventCancelled;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-5xl animate-fade-in">
@@ -163,25 +180,71 @@ const EventDetails = () => {
                         <span className="px-4 py-1.5 rounded-full bg-white/50 backdrop-blur text-indigo-700 font-semibold text-sm">
                             {event.type} Event
                         </span>
-                        {isEnded && (
-                            <span className="px-4 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
-                                Event Ended
-                            </span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {isEventCompleted && (
+                                <span className="px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
+                                    ✅ Event Completed
+                                </span>
+                            )}
+                            {isEventCancelled && (
+                                <span className="px-4 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
+                                    ❌ Event Cancelled
+                                </span>
+                            )}
+                            {!isEventCompleted && !isEventCancelled && isEnded && (
+                                <span className="px-4 py-1.5 rounded-full bg-red-100 text-red-700 font-semibold text-sm">
+                                    Event Ended
+                                </span>
+                            )}
+                            {!isEventCompleted && !isEventCancelled && !isEnded && isDeadlinePassed && (
+                                <span className="px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 font-semibold text-sm">
+                                    Registration Closed
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">{event.name}</h1>
                     <p className="text-lg text-gray-700 max-w-2xl leading-relaxed">{event.description}</p>
 
-                    <div className="mt-6 flex flex-wrap gap-6 text-gray-600 font-medium">
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">Date:</span> {new Date(event.startDate).toLocaleString()}
+                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Start Date</span>
+                            <span className="text-gray-800 font-medium">{new Date(event.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">Location:</span> {event.location || 'Campus'}
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">End Date</span>
+                            <span className="text-gray-800 font-medium">{event.endDate ? new Date(event.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">Fee:</span> {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Reg Deadline</span>
+                            <span className={`font-medium ${event.deadline && new Date(event.deadline) > new Date() ? 'text-green-700' : 'text-red-600'}`}>
+                                {event.deadline ? new Date(event.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                            </span>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Eligibility</span>
+                            <span className="text-gray-800 font-medium">{event.eligibility || 'Anyone'}</span>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Location</span>
+                            <span className="text-gray-800 font-medium">{event.location || 'Campus'}</span>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Fee</span>
+                            <span className="text-gray-800 font-medium">{event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}</span>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Organized By</span>
+                            <span className="text-gray-800 font-medium">{event.organizer?.name || 'Organizer'}</span>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur rounded-xl p-3">
+                            <span className="block text-xs text-gray-500 font-semibold uppercase mb-1">Seats</span>
+                            <span className="text-gray-800 font-medium">
+                                {event.registrationLimit > 0
+                                    ? `${event.currentRegistrations || 0} / ${event.registrationLimit}`
+                                    : 'Unlimited'}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -191,6 +254,30 @@ const EventDetails = () => {
                 {/* Left Column: Form / Registration Status */}
                 <div className="lg:col-span-2 space-y-8 h-fit">
                     {!registration ? (
+                        cannotRegister ? (
+                            /* ── Blocked: show reason, no form ── */
+                            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+                                <div className="text-5xl mb-4">
+                                    {isEventCancelled ? '❌' : isEventCompleted ? '✅' : isEnded ? '🏁' : isDeadlinePassed ? '🔒' : isStockExhausted ? '📦' : '🚫'}
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-700 mb-2">
+                                    {isEventCancelled ? 'Event Cancelled' :
+                                     isEventCompleted ? 'Event Completed' :
+                                     isEnded ? 'Event Has Ended' :
+                                     isDeadlinePassed ? 'Registration Closed' :
+                                     isStockExhausted ? 'All Items Sold Out' :
+                                     'Registration Full'}
+                                </h3>
+                                <p className="text-gray-500 text-sm">
+                                    {isEventCancelled ? 'This event has been cancelled by the organiser.' :
+                                     isEventCompleted ? 'This event has been marked as completed. Check your participation history.' :
+                                     isEnded ? 'This event has already taken place.' :
+                                     isDeadlinePassed ? 'The registration deadline for this event has passed.' :
+                                     isStockExhausted ? 'All merchandise items are currently out of stock.' :
+                                     'This event has reached its maximum number of participants.'}
+                                </p>
+                            </div>
+                        ) : (
                         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                             <h3 className="text-2xl font-bold mb-6 text-gray-800">Register Now</h3>
                             <FormRenderer
@@ -264,7 +351,6 @@ const EventDetails = () => {
                                                         ) : (
                                                             <button
                                                                 onClick={() => {
-                                                                    // Add with default variant if exists
                                                                     handleMerchSelect(item);
                                                                 }}
                                                                 className={`w-full py-2 rounded font-semibold text-sm transition-colors ${item.stock > 0
@@ -293,20 +379,15 @@ const EventDetails = () => {
 
                             <button
                                 onClick={handleRegister}
-                                disabled={isEnded || (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit)}
-                                className={`w-full mt-8 btn-primary text-lg py-3 rounded-xl shadow-lg font-bold transition-all transform active:scale-95 ${isEnded || (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit)
-                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none'
-                                    : 'shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700 text-white'
-                                    }`}
+                                className="w-full mt-8 btn-primary text-lg py-3 rounded-xl shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg font-bold transition-all transform active:scale-95"
                             >
-                                {isEnded ? 'Event Ended' :
-                                    (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit) ? 'Registration Full' :
-                                        event.type === 'Merchandise' ?
-                                            `Purchase Items (Total: ₹${totalMerchCost})` :
-                                            `Confirm Registration ${totalMerchCost > 0 ? `(+ ₹${totalMerchCost} Merch)` : ''} ${event.registrationFee > 0 ? `(Fee: ₹${event.registrationFee})` : ''}`
+                                {event.type === 'Merchandise'
+                                    ? `Purchase Items (Total: ₹${totalMerchCost})`
+                                    : `Confirm Registration${totalMerchCost > 0 ? ` (+ ₹${totalMerchCost} Merch)` : ''}${event.registrationFee > 0 ? ` (Fee: ₹${event.registrationFee})` : ''}`
                                 }
                             </button>
                         </div>
+                        ) /* end cannotRegister ternary */
                     ) : (
                         <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
                             <div className="text-5xl mb-4 text-green-600 font-bold">Confirmed</div>

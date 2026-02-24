@@ -128,6 +128,7 @@ const Profile = () => {
                 contactNumber: formData.contactNumber,
                 collegeName: formData.collegeName,
                 interests: formData.interests,
+                following: formData.following, // persist updated following list
                 // Organizer specific
                 contactEmail: formData.contactEmail,
                 organizerName: formData.organizerName,
@@ -147,8 +148,8 @@ const Profile = () => {
             setEditMode(false);
             setFormData(prev => ({ ...prev, password: '', confirmPassword: '', currentPassword: '' }));
 
-            // Update context and local storage
-            const updatedUser = { ...user, ...data };
+            // Update context and local storage — explicitly include following so scoring refreshes
+            const updatedUser = { ...user, ...data, following: formData.following };
             setUser(updatedUser);
             localStorage.setItem('userInfo', JSON.stringify(updatedUser));
             localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -267,10 +268,9 @@ const Profile = () => {
                                         className={`w-full border p-2 rounded ${!editMode ? 'bg-gray-100' : 'bg-white border-indigo-300'}`}
                                     >
                                         <option value="">Select Category</option>
-                                        <option value="Cultural">Cultural</option>
-                                        <option value="Technical">Technical</option>
-                                        <option value="Sports">Sports</option>
-                                        <option value="Other">Other</option>
+                                        <option value="Clubs">Clubs</option>
+                                        <option value="Councils">Councils</option>
+                                        <option value="Fest Teams">Fest Teams</option>
                                     </select>
                                 </div>
                                 <div>
@@ -290,8 +290,8 @@ const Profile = () => {
                         </div>
                     )}
 
-                    {/* Editable Fields */}
-                    {user?.role !== 'admin' && ( // Admin doesn't need personal details usually, but keeping name is fine. Hiding contact/college if needed
+                    {/* Editable Fields — participants only (clubs have Club Name, admins don't need this) */}
+                    {user?.role !== 'admin' && user?.role !== 'organizer' && (
                         <>
                             <div>
                                 <label className="block text-gray-600 mb-1">First Name</label>

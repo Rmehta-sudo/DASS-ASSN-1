@@ -27,7 +27,7 @@ const testFeedback = async () => {
 
         const orgEmail = `org_feed_${Date.now()}@clubs.iiit.ac.in`;
         await axios.post(`${API_URL}/admin/clubs`, {
-            name: "Feedback Club " + Date.now(), category: "Cultural", email: orgEmail, description: "Test"
+            name: "Feedback Club " + Date.now(), category: "Clubs", email: orgEmail, description: "Test"
         }, { headers: { Authorization: `Bearer ${adminToken}` } });
 
         const orgLogin = await axios.post(`${API_URL}/auth/login`, { email: orgEmail, password: 'thisisclub', captchaToken: "test-token" });

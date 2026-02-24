@@ -23,8 +23,15 @@ const FormBuilder = ({ formFields, setFormFields }) => {
         setFormFields(updated);
     };
 
+    const moveField = (index, direction) => {
+        const updated = [...formFields];
+        const swapIndex = index + direction;
+        if (swapIndex < 0 || swapIndex >= updated.length) return;
+        [updated[index], updated[swapIndex]] = [updated[swapIndex], updated[index]];
+        setFormFields(updated);
+    };
+
     const addOption = (index, option) => {
-        // Simple comma separated for now
         const updated = [...formFields];
         updated[index].options = option.split(',').map(s => s.trim());
         setFormFields(updated);
@@ -33,9 +40,9 @@ const FormBuilder = ({ formFields, setFormFields }) => {
     return (
         <div className="border p-4 rounded bg-gray-50 mt-4 h-[100%]">
             <h3 className="font-semibold text-gray-700">Custom Registration Form</h3>
-            <p className="text-xs text-gray-500 mb-4">Add extra questions for participants.</p>
+            <p className="text-xs text-gray-500 mb-4">Add extra questions for participants. Use ↑ ↓ to reorder fields.</p>
 
-            <div className="flex space-x-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
                 <button type="button" onClick={() => addField('text')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Text</button>
                 <button type="button" onClick={() => addField('number')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Number</button>
                 <button type="button" onClick={() => addField('dropdown')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ Dropdown</button>
@@ -43,11 +50,37 @@ const FormBuilder = ({ formFields, setFormFields }) => {
                 <button type="button" onClick={() => addField('file')} className="px-3 py-1 bg-white border rounded text-sm hover:bg-gray-100">+ File Upload</button>
             </div>
 
+            {formFields.length === 0 && (
+                <p className="text-sm text-gray-400 italic text-center py-4">No fields yet. Add a field above.</p>
+            )}
+
             {formFields.map((field, index) => (
                 <div key={index} className="bg-white p-3 border rounded mb-2 relative group">
-                    <button type="button" onClick={() => removeField(index)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs">Remove</button>
+                    {/* Top row: reorder + remove */}
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => moveField(index, -1)}
+                            disabled={index === 0}
+                            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs border border-gray-200 rounded hover:border-indigo-300"
+                            title="Move up"
+                        >↑</button>
+                        <button
+                            type="button"
+                            onClick={() => moveField(index, 1)}
+                            disabled={index === formFields.length - 1}
+                            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs border border-gray-200 rounded hover:border-indigo-300"
+                            title="Move down"
+                        >↓</button>
+                        <button
+                            type="button"
+                            onClick={() => removeField(index)}
+                            className="w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 text-xs border border-gray-200 rounded hover:border-red-300"
+                            title="Remove field"
+                        >✕</button>
+                    </div>
 
-                    <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="grid grid-cols-2 gap-2 mb-2 pr-24">
                         <div>
                             <label className="block text-xs text-gray-500">Label/Question</label>
                             <input type="text" className="w-full border px-2 py-1 text-sm rounded"
@@ -55,7 +88,7 @@ const FormBuilder = ({ formFields, setFormFields }) => {
                         </div>
                         <div>
                             <label className="block text-xs text-gray-500">Type</label>
-                            <span className="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded">{field.type}</span>
+                            <span className="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded inline-block">{field.type}</span>
                         </div>
                     </div>
 
@@ -73,6 +106,9 @@ const FormBuilder = ({ formFields, setFormFields }) => {
                                 onBlur={(e) => addOption(index, e.target.value)} />
                         </div>
                     )}
+
+                    {/* Field index indicator */}
+                    <span className="absolute bottom-2 right-2 text-xs text-gray-300">#{index + 1}</span>
                 </div>
             ))}
         </div>

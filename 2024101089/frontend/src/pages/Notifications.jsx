@@ -84,7 +84,7 @@ const Notifications = () => {
                                             </p>
                                         </div>
                                         <p className="text-xs text-gray-400 pl-4">
-                                            {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString()}
+                                            {new Date(notification.createdAt).toLocaleDateString('en-GB')} at {new Date(notification.createdAt).toLocaleTimeString()}
                                         </p>
                                     </div>
                                     {!notification.isRead && (

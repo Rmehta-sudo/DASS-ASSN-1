@@ -14,7 +14,7 @@ const AdminDashboard = () => {
     const location = useLocation();
 
     // Form State
-    const [newClub, setNewClub] = useState({ name: '', category: 'Cultural', email: '', description: '' });
+    const [newClub, setNewClub] = useState({ name: '', category: 'Clubs', email: '', description: '' });
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -123,9 +123,9 @@ const AdminDashboard = () => {
             const config = {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             };
-            await axios.post(`${API_URL}/admin/clubs`, newClub, config);
-            setMessage('Club added successfully! Password: password123'); // Student hack: showing default password
-            setNewClub({ name: '', category: 'Cultural', email: '', description: '' });
+            const { data: createdClub } = await axios.post(`${API_URL}/admin/clubs`, newClub, config);
+            setMessage(`Club added successfully! Login password: ${createdClub.password}`);
+            setNewClub({ name: '', category: 'Clubs', email: '', description: '' });
             fetchClubs();
         } catch (error) {
             setMessage('Error adding club: ' + (error.response?.data?.message || error.message));
@@ -211,10 +211,9 @@ const AdminDashboard = () => {
                                         <label className="block text-sm text-gray-600">Category</label>
                                         <select className="w-full border p-2 rounded"
                                             value={newClub.category} onChange={e => setNewClub({ ...newClub, category: e.target.value })}>
-                                            <option value="Cultural">Cultural</option>
-                                            <option value="Technical">Technical</option>
-                                            <option value="Sports">Sports</option>
-                                            <option value="Other">Other</option>
+                                            <option value="Clubs">Clubs</option>
+                                            <option value="Councils">Councils</option>
+                                            <option value="Fest Teams">Fest Teams</option>
                                         </select>
                                     </div>
                                     <div className="mb-3">
@@ -253,8 +252,8 @@ const AdminDashboard = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{club.name}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        ${club.category === 'Technical' ? 'bg-blue-100 text-blue-800' :
-                                                                club.category === 'Cultural' ? 'bg-pink-100 text-pink-800' : 'bg-green-100 text-green-800'}`}>
+                                                        ${club.category === 'Clubs' ? 'bg-blue-100 text-blue-800' :
+                                                                club.category === 'Councils' ? 'bg-pink-100 text-pink-800' : 'bg-purple-100 text-purple-800'}`}>
                                                             {club.category}
                                                         </span>
                                                     </td>

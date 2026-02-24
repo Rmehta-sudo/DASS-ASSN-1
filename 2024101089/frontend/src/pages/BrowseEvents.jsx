@@ -1,10 +1,82 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../apiConfig';
 import { useAuth } from '../context/AuthContext';
 
+// ---------------------------------------------------------------------------
+// Fuzzy search helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a numeric score >= 0 for how well `needle` matches `haystack`.
+ * 0 means no match at all.
+ *
+ * Strategy (in priority order):
+ *   1. Exact substring match          → highest score (1000 + position bonus)
+ *   2. Every word in needle appears   → word-level partial match (500)
+ *   3. Character subsequence match    → fuzzy fallback (200 - gap penalty)
+ */
+const fuzzyScore = (needle, haystack) => {
+    if (!needle) return 1; // empty query matches everything
+    const n = needle.toLowerCase().trim();
+    const h = haystack.toLowerCase();
+
+    // 1. Exact substring
+    const idx = h.indexOf(n);
+    if (idx !== -1) {
+        // Bonus for matching near the start
+        return 1000 + Math.max(0, 100 - idx);
+    }
+
+    // 2. Every word of the needle appears anywhere in haystack
+    const words = n.split(/\s+/).filter(Boolean);
+    if (words.length > 1 && words.every(w => h.includes(w))) {
+        return 500;
+    }
+
+    // 3. Character subsequence (fuzzy) — all chars of needle appear in order
+    let ni = 0;
+    let gaps = 0;
+    let lastMatch = -1;
+    for (let hi = 0; hi < h.length && ni < n.length; hi++) {
+        if (h[hi] === n[ni]) {
+            if (lastMatch !== -1) gaps += hi - lastMatch - 1;
+            lastMatch = hi;
+            ni++;
+        }
+    }
+    if (ni === n.length) {
+        return Math.max(1, 200 - gaps);
+    }
+
+    // No match
+    return 0;
+};
+
+/**
+ * Score an event against a search query.
+ * Checks name, organizer name, description, and tags.
+ */
+const eventFuzzyScore = (event, query) => {
+    if (!query.trim()) return 1;
+    const name = event.name || '';
+    const orgName = event.organizer?.name || '';
+    const desc = event.description || '';
+    const tags = (event.tags || []).join(' ');
+
+    // Weight: name & organizer matter most
+    return Math.max(
+        fuzzyScore(query, name) * 2,
+        fuzzyScore(query, orgName) * 1.5,
+        fuzzyScore(query, desc),
+        fuzzyScore(query, tags)
+    );
+};
+
 const BrowseEvents = () => {
+    const { user } = useAuth(); // Must be before any useState that references user
+
     const [events, setEvents] = useState([]);
     const [filteredEvents, setFilteredEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,23 +85,30 @@ const BrowseEvents = () => {
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
-
     const [typeFilter, setTypeFilter] = useState('All');
-    const [eligibilityFilter, setEligibilityFilter] = useState('All');
+    const [eligibilityFilter, setEligibilityFilter] = useState('All'); // default; overridden by useEffect below
 
     const [startDateFilter, setStartDateFilter] = useState('');
     const [endDateFilter, setEndDateFilter] = useState('');
     const [followedOnly, setFollowedOnly] = useState(false);
-
-    const [showRecommended, setShowRecommended] = useState(false);
     const [trendingEvents, setTrendingEvents] = useState([]);
 
-    const { user } = useAuth(); // Need user for 'Following' filter
+    // Serialize following to a string so the effect only fires when the actual list changes
+    const followingKey = JSON.stringify((user?.following || []).map(f =>
+        typeof f === 'object' ? (f._id || f).toString() : f.toString()
+    ).sort());
 
     useEffect(() => {
         fetchEvents();
         fetchTrending();
-    }, []);
+    }, [followingKey]); // re-fetch when following changes so backend scoring updates
+
+    // Auto-apply "Open to All" filter for non-IIIT participants once user context loads
+    useEffect(() => {
+        if (user && user.participantType && user.participantType !== 'IIIT') {
+            setEligibilityFilter('Anyone');
+        }
+    }, [user]);
 
     useEffect(() => {
         // Filter logic
@@ -48,10 +127,13 @@ const BrowseEvents = () => {
         }
 
         if (searchTerm) {
-            result = result.filter(e =>
-                e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (e.organizer && e.organizer.name.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
+            // Score every event; keep only those with a positive score,
+            // then sort highest-score first so best matches appear at the top.
+            const scored = result
+                .map(e => ({ event: e, score: eventFuzzyScore(e, searchTerm) }))
+                .filter(({ score }) => score > 0);
+            scored.sort((a, b) => b.score - a.score);
+            result = scored.map(({ event }) => event);
         }
 
         if (eligibilityFilter !== 'All') {
@@ -74,7 +156,14 @@ const BrowseEvents = () => {
         }
 
         if (followedOnly && user) {
-            result = result.filter(e => user.following.includes(e.organizer?._id));
+            // user.following may contain ObjectIds or plain strings — stringify both sides to be safe
+            const followingIds = (user.following || []).map(f =>
+                typeof f === 'object' ? (f._id || f).toString() : f.toString()
+            );
+            result = result.filter(e => {
+                const orgId = e.organizer?._id?.toString() || e.organizer?.toString();
+                return orgId && followingIds.includes(orgId);
+            });
         }
 
         setFilteredEvents(result);
@@ -94,40 +183,12 @@ const BrowseEvents = () => {
         }
     };
 
-    const fetchRecommended = async () => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const { data } = await axios.get(`${API_URL}/events/recommended`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setEvents(data);
-            setFilteredEvents(data);
-            setLoading(false);
-        } catch (error) {
-            console.error("Error fetching recommended events", error);
-            setLoading(false);
-            // Fallback to normal events if error (e.g. not logged in)
-            fetchEvents();
-        }
-    };
-
     const fetchTrending = async () => {
         try {
             const { data } = await axios.get(`${API_URL}/events/trending`);
             setTrendingEvents(data);
         } catch (error) {
             console.error("Error fetching trending events", error);
-        }
-    };
-
-    const toggleRecommended = () => {
-        if (!showRecommended) {
-            setShowRecommended(true);
-            fetchRecommended();
-        } else {
-            setShowRecommended(false);
-            fetchEvents();
         }
     };
 
@@ -184,15 +245,6 @@ const BrowseEvents = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button
-                        onClick={toggleRecommended}
-                        className={`px-5 py-2.5 rounded-xl border font-medium transition-all flex items-center gap-2 ${showRecommended
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                            : 'bg-white/50 border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-white'
-                            }`}
-                    >
-                        <span>All Events</span> For You
-                    </button>
                     {user && (
                         <button
                             onClick={() => setFollowedOnly(!followedOnly)}
@@ -201,7 +253,7 @@ const BrowseEvents = () => {
                                 : 'bg-white/50 border-gray-200 text-gray-700 hover:border-pink-300 hover:bg-white'
                                 }`}
                         >
-                            <span>Following</span>
+                            {followedOnly ? '✓ Following' : 'Following'}
                         </button>
                     )}
                 </div>
@@ -236,7 +288,7 @@ const BrowseEvents = () => {
                         onChange={(e) => setEligibilityFilter(e.target.value)}
                     >
                         <option value="All">All Eligibility</option>
-                        <option value="Open to All">Open to All</option>
+                        <option value="Anyone">Open to All</option>
                         <option value="IIIT Only">IIIT Only</option>
                     </select>
 
@@ -245,6 +297,7 @@ const BrowseEvents = () => {
                             <span className="text-xs text-gray-500 ml-1">From</span>
                             <input
                                 type="date"
+                                lang="en-GB"
                                 className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
                                 value={startDateFilter}
                                 onChange={(e) => setStartDateFilter(e.target.value)}
@@ -256,6 +309,7 @@ const BrowseEvents = () => {
                             <span className="text-xs text-gray-500 ml-1">To</span>
                             <input
                                 type="date"
+                                lang="en-GB"
                                 className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white/50 text-sm"
                                 value={endDateFilter}
                                 onChange={(e) => setEndDateFilter(e.target.value)}
@@ -296,8 +350,12 @@ const BrowseEvents = () => {
                                 <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-1">{event.description}</p>
 
                                 <div className="mt-auto pt-4 border-t border-gray-100">
-                                    <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
-                                        <span>Date: {new Date(event.startDate).toLocaleDateString()}</span>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mb-4">
+                                        <span>Start: {new Date(event.startDate).toLocaleDateString('en-GB')}</span>
+                                        <span>End: {event.endDate ? new Date(event.endDate).toLocaleDateString('en-GB') : '—'}</span>
+                                        <span className={`${event.deadline && new Date(event.deadline) > new Date() ? 'text-green-600 font-semibold' : 'text-red-500'}`}>
+                                            Reg Deadline: {event.deadline ? new Date(event.deadline).toLocaleDateString('en-GB') : '—'}
+                                        </span>
                                         <span>Fee: {event.registrationFee === 0 ? 'Free' : `₹${event.registrationFee}`}</span>
                                     </div>
 
@@ -328,10 +386,16 @@ const getGradient = (type) => {
 
 const computeStatus = (event) => {
     const now = new Date();
-    if (now > new Date(event.endDate)) return 'Ended';
+    // Parse as end-of-day to avoid UTC midnight vs IST offset making events appear ended prematurely
+    const toEndOfDay = (dateStr) => {
+        const d = new Date(dateStr);
+        d.setHours(23, 59, 59, 999);
+        return d;
+    };
+    if (!event.endDate || now > toEndOfDay(event.endDate)) return 'Ended';
     if (now >= new Date(event.startDate)) return 'Ongoing';
-    if (event.registeredCount >= event.registrationLimit) return 'Full';
-    return (new Date(event.deadline) < now) ? 'Closed' : 'Open';
+    if (event.registrationLimit > 0 && event.currentRegistrations >= event.registrationLimit) return 'Full';
+    return (!event.deadline || new Date(event.deadline) < now) ? 'Closed' : 'Open';
 };
 
 export default BrowseEvents;

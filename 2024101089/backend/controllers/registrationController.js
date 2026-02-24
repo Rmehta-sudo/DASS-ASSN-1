@@ -24,6 +24,16 @@ const registerEvent = async (req, res) => {
             return res.status(404).json({ message: 'Event not found' });
         }
 
+        // Check registration deadline
+        if (event.deadline && new Date() > new Date(event.deadline)) {
+            return res.status(400).json({ message: 'Registration deadline has passed' });
+        }
+
+        // Check event status — only Published/Ongoing events allow registrations
+        if (!['Published', 'Ongoing'].includes(event.status)) {
+            return res.status(400).json({ message: 'Registrations are not open for this event' });
+        }
+
         // Check if already registered
         const existingReg = await Registration.findOne({ user: req.user._id, event: eventId });
         if (existingReg) {
@@ -97,13 +107,17 @@ const registerEvent = async (req, res) => {
             status = 'Pending';
         }
 
+        // Transform responses from { label: answer } object to [{ label, answer }] array
+        const formattedResponses = responses
+            ? Object.entries(responses).map(([label, answer]) => ({ label, answer }))
+            : [];
+
         const regData = {
             user: req.user._id,
             event: eventId,
             status,
-            responses, // Form responses
+            responses: formattedResponses,
             merchandiseSelection,
-
         };
 
         if (status === 'Confirmed') {
@@ -178,7 +192,7 @@ const getMyRegistrations = async (req, res) => {
         const registrations = await Registration.find({ user: req.user._id })
             .populate({
                 path: 'event',
-                select: 'name type startDate registrationFee status organizer',
+                select: 'name type startDate endDate registrationFee status organizer',
                 populate: { path: 'organizer', select: 'name' }
             })
             .sort({ createdAt: -1 });

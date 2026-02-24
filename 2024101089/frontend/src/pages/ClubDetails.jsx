@@ -123,7 +123,7 @@ const EventCard = ({ event }) => (
             <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{event.name}</h3>
 
             <div className="text-sm text-gray-600 space-y-1 mb-4">
-                <p>Date: {new Date(event.startDate).toLocaleDateString()} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>Date: {new Date(event.startDate).toLocaleDateString('en-GB')} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 <p>Location: {event.location}</p>
             </div>
 

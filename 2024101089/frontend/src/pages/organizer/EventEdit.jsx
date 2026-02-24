@@ -11,6 +11,7 @@ const EventEdit = () => {
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
     const [error, setError] = useState('');
+    const [registrationCount, setRegistrationCount] = useState(0);
 
     const [eventData, setEventData] = useState({
         name: '',
@@ -39,7 +40,14 @@ const EventEdit = () => {
             const config = {
                 headers: { Authorization: `Bearer ${token}` }
             };
-            const { data } = await axios.get(`${API_URL}/events/${id}`, config);
+
+            // Fetch event data and registration list in parallel
+            const [{ data }, regsRes] = await Promise.all([
+                axios.get(`${API_URL}/events/${id}`, config),
+                axios.get(`${API_URL}/registrations/event/${id}`, config).catch(() => ({ data: [] }))
+            ]);
+
+            setRegistrationCount(regsRes.data.length);
 
             // Format dates for datetime-local input
             const formattedEvent = {
@@ -102,21 +110,52 @@ const EventEdit = () => {
     };
 
     const isFieldDisabled = (fieldName) => {
-        if (eventData.status === 'Draft') return false; // All editable
+        if (eventData.status === 'Draft') return false; // All editable in Draft
+
         if (['Ongoing', 'Completed', 'Cancelled'].includes(eventData.status)) {
-            return fieldName !== 'status'; // Only status is editable
+            return fieldName !== 'status'; // Only status editable once past Published
         }
+
         if (eventData.status === 'Published') {
-            // Published allowed: description, deadline, registrationLimit, status
-            return !['description', 'deadline', 'registrationLimit', 'status'].includes(fieldName);
+            // After publication: only description, deadline, registrationLimit and status
+            // are allowed to change. All other core fields are locked.
+            // Note: formFields has its own separate lock (isFormLocked) based on registrations.
+            const allowedWhenPublished = ['description', 'deadline', 'registrationLimit', 'status'];
+            return !allowedWhenPublished.includes(fieldName);
         }
+
         return false;
     };
 
-    const handleCloseRegistrations = () => {
-        // Set deadline to now
+    // Form builder is locked independently: once the first registration arrives,
+    // form fields can never be changed (regardless of event status).
+    const isFormLocked = registrationCount > 0;
+
+    const handleCloseRegistrations = async () => {
+        if (!window.confirm('Close registrations now? This will set the deadline to the current time and save immediately.')) return;
+
         const now = new Date().toISOString().slice(0, 16);
-        setEventData({ ...eventData, deadline: now });
+        const updatedData = { ...eventData, deadline: now };
+        setEventData(updatedData);
+
+        // Persist immediately — don't wait for the user to click Save
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) throw new Error('Not authenticated');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const payload = {
+                ...updatedData,
+                tags: updatedData.tags.split(',').map(t => t.trim()),
+                merchandise: updatedData.merchandise.map(m => ({
+                    ...m,
+                    limitPerUser: Number(m.limitPerUser) || 1
+                }))
+            };
+            await axios.put(`${API_URL}/events/${id}`, payload, config);
+            alert('Registrations closed — deadline set to now.');
+        } catch (err) {
+            setError(err.response?.data?.message || err.message);
+        }
     };
 
     if (fetchLoading) {
@@ -202,14 +241,20 @@ const EventEdit = () => {
 
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                                <input type="datetime-local" name="startDate" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                <label className="block text-sm font-medium text-gray-700">Start Date & Time</label>
+                                <input type="datetime-local" name="startDate" required lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
                                     value={eventData.startDate} onChange={handleChange} disabled={isFieldDisabled('startDate')} />
                             </div>
 
                             <div>
+                                <label className="block text-sm font-medium text-gray-700">End Date & Time</label>
+                                <input type="datetime-local" name="endDate" lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                    value={eventData.endDate} onChange={handleChange} disabled={isFieldDisabled('endDate')} />
+                            </div>
+
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
-                                <input type="datetime-local" name="deadline" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
+                                <input type="datetime-local" name="deadline" required lang="en-GB" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:bg-gray-200"
                                     value={eventData.deadline} onChange={handleChange} disabled={isFieldDisabled('deadline')} />
                             </div>
 
@@ -242,17 +287,38 @@ const EventEdit = () => {
                         )}
 
                         {/* Form Builder Section (Only for Normal Events) */}
-                        {eventData.type === 'Normal' && !isFieldDisabled('formFields') && (
+                        {eventData.type === 'Normal' && !isFormLocked && (
                             <div className="mt-8 pt-6 border-t">
                                 <FormBuilder
                                     formFields={eventData.formFields}
                                     setFormFields={handleFormFieldsChange}
                                 />
+                                {registrationCount === 0 && eventData.status !== 'Draft' && (
+                                    <p className="mt-2 text-xs text-amber-600">
+                                        ⚠️ Form will be locked once the first registration is received.
+                                    </p>
+                                )}
                             </div>
                         )}
-                        {eventData.type === 'Normal' && isFieldDisabled('formFields') && (
-                            <div className="mt-8 pt-6 border-t text-gray-500">
-                                Custom form fields cannot be edited after publishing.
+                        {eventData.type === 'Normal' && isFormLocked && (
+                            <div className="mt-8 pt-6 border-t">
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                                    🔒 <strong>Form Locked</strong> — This event already has {registrationCount} registration{registrationCount !== 1 ? 's' : ''}. Form fields cannot be modified to protect existing participants' submissions.
+                                </div>
+                                {/* Show read-only preview of the locked fields */}
+                                {eventData.formFields.length > 0 && (
+                                    <div className="mt-4 space-y-2">
+                                        {eventData.formFields.map((field, i) => (
+                                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-3 flex items-center justify-between text-sm text-gray-600">
+                                                <span>
+                                                    <span className="font-medium text-gray-800">#{i + 1} {field.label}</span>
+                                                    {field.required && <span className="ml-1 text-red-500 text-xs">*required</span>}
+                                                </span>
+                                                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">{field.type}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 

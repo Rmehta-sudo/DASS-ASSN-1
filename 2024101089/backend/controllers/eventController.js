@@ -237,6 +237,14 @@ const updateEvent = async (req, res) => {
 
         await event.save();
 
+        // Cascade cancellation to registrations when event is cancelled
+        if (oldStatus !== 'Cancelled' && event.status === 'Cancelled') {
+            await Registration.updateMany(
+                { event: event._id, status: { $in: ['Pending', 'Confirmed'] } },
+                { $set: { status: 'Cancelled' } }
+            );
+        }
+
         // Send Webhook if Published via Update
         if (oldStatus !== 'Published' && event.status === 'Published') {
             sendDiscordNotification(
@@ -399,9 +407,23 @@ const getEventAnalytics = async (req, res) => {
         const registrations = await Registration.find({ event: req.params.id });
 
         const totalRegistrations = registrations.length;
-        const confirmedRegistrations = registrations.filter(r => r.status === 'Confirmed').length;
+        const confirmedRegs = registrations.filter(r => r.status === 'Confirmed');
+        const confirmedRegistrations = confirmedRegs.length;
         const pendingRegistrations = registrations.filter(r => r.status === 'Pending').length;
-        const totalRevenue = confirmedRegistrations * event.registrationFee;
+
+        // For merchandise events, revenue = sum of (quantity * price) for every item
+        // across all confirmed registrations. For normal events, use registrationFee.
+        let totalRevenue;
+        if (event.type === 'Merchandise') {
+            totalRevenue = confirmedRegs.reduce((sum, reg) => {
+                const merchTotal = (reg.merchandiseSelection || []).reduce((s, item) => {
+                    return s + (item.quantity || 1) * (item.price || 0);
+                }, 0);
+                return sum + merchTotal;
+            }, 0);
+        } else {
+            totalRevenue = confirmedRegistrations * (event.registrationFee || 0);
+        }
 
         // Daily registrations (last 7 days)
         const dailyStats = {};
@@ -442,19 +464,38 @@ const exportEventCsv = async (req, res) => {
             .populate('user', 'firstName lastName email contactNumber collegeName')
             .sort({ createdAt: -1 });
 
-        // Generate CSV content
-        const headers = ['Ticket ID', 'Status', 'First Name', 'Last Name', 'Email', 'Phone', 'College', 'Reg Date'];
-        const rows = registrations.map(reg => [
-            reg.ticketId || 'N/A',
-            reg.status,
-            reg.user.firstName,
-            reg.user.lastName,
-            reg.user.email,
-            reg.user.contactNumber || 'N/A',
-            reg.user.collegeName || 'N/A',
+        // Generate CSV content — include form responses dynamically
+        // Collect all unique response labels across all registrations
+        const allLabels = new Set();
+        registrations.forEach(reg => {
+            if (reg.responses) {
+                reg.responses.forEach(r => allLabels.add(r.label));
+            }
+        });
+        const labelArray = Array.from(allLabels);
 
-            new Date(reg.createdAt).toLocaleDateString()
-        ]);
+        const headers = ['Ticket ID', 'Status', 'First Name', 'Last Name', 'Email', 'Phone', 'College', 'Reg Date', ...labelArray];
+        const rows = registrations.map(reg => {
+            const baseRow = [
+                reg.ticketId || 'N/A',
+                reg.status,
+                reg.user.firstName,
+                reg.user.lastName,
+                reg.user.email,
+                reg.user.contactNumber || 'N/A',
+                reg.user.collegeName || 'N/A',
+                new Date(reg.createdAt).toLocaleDateString('en-GB')
+            ];
+            // Add form responses in label order
+            const responseMap = {};
+            if (reg.responses) {
+                reg.responses.forEach(r => {
+                    responseMap[r.label] = Array.isArray(r.answer) ? r.answer.join('; ') : (r.answer || '');
+                });
+            }
+            labelArray.forEach(label => baseRow.push(responseMap[label] || ''));
+            return baseRow;
+        });
 
         const csvContent = [
             headers.join(','),

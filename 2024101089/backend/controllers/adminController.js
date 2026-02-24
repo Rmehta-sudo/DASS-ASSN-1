@@ -241,18 +241,22 @@ const resetDatabase = async (req, res) => {
 
         console.log('Database Cloud Cleared (Admin Preserved)...');
 
-        // 2. Re-seed Clubs
+        // 2. Re-seed Orgs: 6 Clubs + 2 Councils + 3 Fest Teams
         const clubs = [
-            { name: 'Music Club', category: 'Cultural', email: 'music@clubs.iiit.ac.in', desc: 'The official Music Club of IIIT Hyderabad.' },
-            { name: 'The Gaming Club', category: 'Technical', email: 'gaming@clubs.iiit.ac.in', desc: 'For gamers, by gamers. Lan parties and tournaments.' },
-            { name: 'Decore', category: 'Cultural', email: 'decore@clubs.iiit.ac.in', desc: 'Designing the campus, one event at a time.' },
-            { name: 'The Dance Crew', category: 'Cultural', email: 'dance@clubs.iiit.ac.in', desc: 'Expressing through movement and rhythm.' },
-            { name: 'Cyclorama', category: 'Cultural', email: 'cyclorama@clubs.iiit.ac.in', desc: 'Photography and filmmaking enthusiasts.' },
-            { name: 'LitClub', category: 'Cultural', email: 'litclub@clubs.iiit.ac.in', desc: 'For the love of literature and poetry.' },
-            { name: 'Pentaprism', category: 'Cultural', email: 'pentaprism@clubs.iiit.ac.in', desc: 'Capturing moments through the lens.' },
-            { name: 'Hacking Club', category: 'Technical', email: 'hacking@clubs.iiit.ac.in', desc: 'Cybersecurity and CTF competitions.' },
-            { name: 'Programming Club', category: 'Technical', email: 'programming@clubs.iiit.ac.in', desc: 'Competitive programming and algorithms.' },
-            { name: 'Amateur Sports Enthusiasts Club', category: 'Sports', email: 'sports@clubs.iiit.ac.in', desc: 'Promoting sports culture on campus.' },
+            // --- Clubs ---
+            { name: 'Music Club', category: 'Clubs', email: 'music@clubs.iiit.ac.in', desc: 'The official Music Club of IIIT Hyderabad. Concerts, jam sessions and more.' },
+            { name: 'The Dance Crew', category: 'Clubs', email: 'dance@clubs.iiit.ac.in', desc: 'Expressing through movement and rhythm. All dance forms welcome.' },
+            { name: 'Hacking Club', category: 'Clubs', email: 'hacking@clubs.iiit.ac.in', desc: 'Cybersecurity, CTF competitions and ethical hacking workshops.' },
+            { name: 'Programming Club', category: 'Clubs', email: 'programming@clubs.iiit.ac.in', desc: 'Competitive programming, algorithms and coding contests.' },
+            { name: 'Cyclorama', category: 'Clubs', email: 'cyclorama@clubs.iiit.ac.in', desc: 'Photography and filmmaking enthusiasts capturing moments.' },
+            { name: 'LitClub', category: 'Clubs', email: 'litclub@clubs.iiit.ac.in', desc: 'For the love of literature, poetry and creative writing.' },
+            // --- Councils ---
+            { name: 'Student Council', category: 'Councils', email: 'studentcouncil@iiit.ac.in', desc: 'The student governing body of IIIT Hyderabad. Representing every student.' },
+            { name: 'Sports Council', category: 'Councils', email: 'sportscouncil@iiit.ac.in', desc: 'Organising all inter and intra college sports events and tournaments.' },
+            // --- Fest Teams ---
+            { name: 'Fest Marketing Team', category: 'Fest Teams', email: 'marketing@felicity.iiit.ac.in', desc: 'Promoting Felicity and managing sponsor events like brand showcases and stunt shows.' },
+            { name: 'Fest Design Team', category: 'Fest Teams', email: 'design@felicity.iiit.ac.in', desc: 'Creating Fest merchandise — T-shirts, hoodies, badges and all official Felicity swag.' },
+            { name: 'Fest Food Stalls', category: 'Fest Teams', email: 'food@felicity.iiit.ac.in', desc: 'Managing all food stalls and culinary experiences at Felicity Fest.' },
         ];
 
         let createdClubs = [];
@@ -280,28 +284,33 @@ const resetDatabase = async (req, res) => {
             createdClubs.push(organizer);
         }
 
-        // 3. Seed Users (Variety)
-        const userPool = [
-            { firstName: 'Alice', lastName: 'Cultural', email: 'alice@test.com', type: 'IIIT', interests: ['Cultural', 'Music', 'Dance'], followingIndices: [0, 3, 5] },
-            { firstName: 'Bob', lastName: 'Techie', email: 'bob@test.com', type: 'Non-IIIT', interests: ['Technical', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] },
-            { firstName: 'Charlie', lastName: 'Sportsfan', email: 'charlie@test.com', type: 'IIIT', interests: ['Sports', 'health'], followingIndices: [9, 2] },
-            { firstName: 'David', lastName: 'General', email: 'david@test.com', type: 'Non-IIIT', interests: ['Technical', 'Art'], followingIndices: [8, 4] },
-            { firstName: 'Eve', lastName: 'Collector', email: 'eve@test.com', type: 'IIIT', interests: ['Cultural', 'Technical'], followingIndices: [0, 1, 6] },
-            { firstName: 'Frank', lastName: 'Newbie', email: 'frank@test.com', type: 'IIIT', interests: ['Music', 'Art'], followingIndices: [0, 5] },
-            { firstName: 'Rachit', lastName: 'Mehta', email: 'rachit.mehta@students.iiit.ac.in', type: 'IIIT', interests: ['Technical', 'Cultural', 'Gaming', 'Coding'], followingIndices: [1, 7, 8] }
+        // 3. Seed 10 standardised participant users
+        //    user1-user7: IIIT (iiit.ac.in), user8-user10: Non-IIIT
+        const participants = [
+            { n: 1, type: 'IIIT', email: 'user1@students.iiit.ac.in', interests: ['Music', 'Dance', 'Art'], followingIndices: [0, 1] },
+            { n: 2, type: 'IIIT', email: 'user2@students.iiit.ac.in', interests: ['Hackathons', 'Coding'], followingIndices: [2, 3] },
+            { n: 3, type: 'IIIT', email: 'user3@students.iiit.ac.in', interests: ['Sports', 'Health'], followingIndices: [7] },
+            { n: 4, type: 'IIIT', email: 'user4@students.iiit.ac.in', interests: ['Photography', 'Design', 'Art'], followingIndices: [4, 5] },
+            { n: 5, type: 'IIIT', email: 'user5@students.iiit.ac.in', interests: ['Literature', 'Drama'], followingIndices: [5, 6] },
+            { n: 6, type: 'IIIT', email: 'user6@students.iiit.ac.in', interests: ['Gaming', 'Coding', 'Robotics'], followingIndices: [2, 3] },
+            { n: 7, type: 'IIIT', email: 'user7@students.iiit.ac.in', interests: ['Entrepreneurship', 'Leadership'], followingIndices: [6, 8] },
+            { n: 8, type: 'Non-IIIT', email: 'user8@gmail.com', interests: ['Music', 'Dance'], followingIndices: [0] },
+            { n: 9, type: 'Non-IIIT', email: 'user9@gmail.com', interests: ['Hackathons', 'Coding'], followingIndices: [2] },
+            { n: 10, type: 'Non-IIIT', email: 'user10@gmail.com', interests: ['Art', 'Design', 'Photography'], followingIndices: [4, 9, 10] },
         ];
 
-        for (const u of userPool) {
+        for (const p of participants) {
             await User.create({
-                firstName: u.firstName,
-                lastName: u.lastName,
-                email: u.email,
-                password: u.email === 'rachit.mehta@students.iiit.ac.in' ? 'rm123' : 'password123',
+                firstName: `user${p.n}`,
+                lastName: '',
+                email: p.email,
+                password: `user${p.n}pass`,
                 role: 'participant',
                 contactNumber: '9876543210',
-                participantType: u.type,
-                interests: u.interests,
-                following: u.followingIndices.map(i => createdClubs[i]._id)
+                participantType: p.type,
+                collegeName: p.type === 'IIIT' ? 'IIIT Hyderabad' : 'Other College',
+                interests: p.interests,
+                following: p.followingIndices.map(i => createdClubs[i]?._id).filter(Boolean)
             });
         }
 
@@ -417,7 +426,7 @@ const resetDatabase = async (req, res) => {
             });
         }
 
-        res.json({ message: 'Database Reset Successfully! Created 10 Clubs, 7 Users, & ~40 varied Events.' });
+        res.json({ message: 'Database Reset Successfully! Created 11 Orgs (6 Clubs + 2 Councils + 3 Fest Teams), 10 Participants, & ~44 varied Events.' });
 
     } catch (error) {
         console.error("Reset Error:", error);

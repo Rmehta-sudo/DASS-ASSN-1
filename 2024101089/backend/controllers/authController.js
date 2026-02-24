@@ -35,8 +35,12 @@ const authUser = async (req, res) => {
         res.json({
             _id: user._id,
             name: user.firstName + ' ' + user.lastName,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.email,
             role: user.role,
+            participantType: user.participantType,
+            collegeName: user.participantType === 'IIIT' ? 'IIIT Hyderabad' : (user.collegeName || ''),
             organizerId: organizerDetails ? organizerDetails._id : null,
             interests: user.interests,
             following: user.following,
