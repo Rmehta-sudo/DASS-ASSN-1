@@ -117,7 +117,7 @@ const FormRenderer = ({ formFields, onResponseChange, responses }) => {
                                 )}
                                 {responses[field.label] && !uploading[field.label] && (
                                     <p className="text-xs text-green-600 mt-1">
-                                        ✓ Uploaded: <a href={`${API_URL.replace('/api', '')}${responses[field.label]}?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" className="underline">{responses[field.label].split('/').pop()}</a>
+                                        ✓ Uploaded: <a href={`${API_URL.replace(/\/api$/, '')}${responses[field.label]}?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" className="underline">{responses[field.label].split('/').pop()}</a>
                                     </p>
                                 )}
                             </div>

@@ -8,6 +8,7 @@ const AttendanceScanner = () => {
     const [status, setStatus] = useState(''); // 'success', 'error', ''
     const [message, setMessage] = useState('');
     const [scannedData, setScannedData] = useState(null);
+    const [showDuplicate, setShowDuplicate] = useState(false);
     const navigate = useNavigate();
 
     const [stats, setStats] = useState({ totalRegistrations: 0, attendedCount: 0 });
@@ -62,10 +63,16 @@ const AttendanceScanner = () => {
         } catch (err) {
             setStatus('error');
             setTimeout(clearStatus, 5000);
-            setMessage(err.response?.data?.message || err.message);
-            if (err.response?.data?.error) {
-                setMessage(`${err.response.data.message}: ${err.response.data.error}`);
+
+            const errMsg = err.response?.data?.message || err.message;
+            const errDetail = err.response?.data?.error;
+
+            if (errMsg === 'Already Marked Present' || errDetail === 'Already Marked Present') {
+                setShowDuplicate(true);
+                setTimeout(() => setShowDuplicate(false), 5000);
             }
+
+            setMessage(errDetail ? `${errMsg}: ${errDetail}` : errMsg);
         }
     };
 
@@ -98,7 +105,16 @@ const AttendanceScanner = () => {
         } catch (err) {
             setStatus('error');
             setTimeout(clearStatus, 5000);
-            setMessage(err.response?.data?.message || err.message);
+
+            const errMsg = err.response?.data?.message || err.message;
+            const errDetail = err.response?.data?.error;
+
+            if (errMsg === 'Already Marked Present' || errDetail === 'Already Marked Present') {
+                setShowDuplicate(true);
+                setTimeout(() => setShowDuplicate(false), 5000);
+            }
+
+            setMessage(errDetail ? `${errMsg}: ${errDetail}` : errMsg);
         }
     };
 
@@ -193,6 +209,25 @@ const AttendanceScanner = () => {
                     )}
                 </div>
             </div>
+
+            {/* Duplicate Popup Modal */}
+            {showDuplicate && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-8 text-center border-4 border-yellow-500">
+                        <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-yellow-100 mb-6 font-bold text-4xl text-yellow-600">
+                            !
+                        </div>
+                        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">DUPLICATE</h2>
+                        <p className="text-lg text-gray-600 mb-6">This ticket has already been marked present!</p>
+                        <button
+                            onClick={() => setShowDuplicate(false)}
+                            className="w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 transition"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
