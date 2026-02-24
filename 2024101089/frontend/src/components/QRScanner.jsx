@@ -3,6 +3,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 
 const QRScanner = ({ onScan, onError }) => {
     const scannerRef = useRef(null);
+    const lastScannedRef = useRef(null);
     const [scanResult, setScanResult] = useState(null);
 
     useEffect(() => {
@@ -20,15 +21,17 @@ const QRScanner = ({ onScan, onError }) => {
         scanner.render(
             (decodedText) => {
                 // Success callback
-                if (decodedText !== scanResult) {
-                    // Debounce or just trigger?
-                    // Trigger only if different or just trigger logic?
-                    // Let parent handle duplicate checks usually, but here we can just update state
+                if (decodedText !== lastScannedRef.current) {
+                    lastScannedRef.current = decodedText;
                     setScanResult(decodedText);
                     if (onScan) onScan(decodedText);
 
-                    // Clear after scan? Or keep scanning?
-                    // Typically keep scanning for attendance
+                    // Allow rescanning the same code after 5 seconds
+                    setTimeout(() => {
+                        if (lastScannedRef.current === decodedText) {
+                            lastScannedRef.current = null;
+                        }
+                    }, 5000);
                 }
             },
             (error) => {

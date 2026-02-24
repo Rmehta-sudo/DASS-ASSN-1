@@ -9,29 +9,32 @@ const markAttendance = async (req, res) => {
     const { ticketId } = req.body;
 
     try {
-        const registration = await Registration.findOne({ ticketId })
+        // Atomic update to prevent race conditions from concurrent scanner fires
+        const registration = await Registration.findOneAndUpdate(
+            { ticketId, attended: false },
+            { $set: { attended: true } },
+            { new: true } // Returns the modified document
+        )
             .populate('user', 'firstName lastName email collegeName')
             .populate('event', 'name organizer');
 
         if (!registration) {
-            return res.status(404).json({ message: 'Invalid Ticket ID' });
-        }
+            // Check if it exists but is already marked, or if it doesn't exist at all
+            const existing = await Registration.findOne({ ticketId })
+                .populate('user', 'firstName lastName email collegeName')
+                .populate('event', 'name organizer');
 
-        // Check if event belongs to organizer (Optional security check)
-        // For now, allow any organizer to scan (or check strictly)
-        // rigid check: if (registration.event.organizer.toString() !== req.user.organizerId) ...
-        // skipping strict check for simplicity/admin use.
+            if (!existing) {
+                return res.status(404).json({ message: 'Invalid Ticket ID' });
+            }
 
-        if (registration.attended) {
+            // Already marked
             return res.status(400).json({
-                message: 'Unknown Error', // Placeholder
+                message: 'Unknown Error', // Maintained for UI compatibility
                 error: 'Already Marked Present',
-                registration
+                registration: existing
             });
         }
-
-        registration.attended = true;
-        await registration.save();
 
         res.json({
             message: 'Attendance Marked Successfully',
